@@ -1,2 +1,3 @@
-# manifold-match-3
+# Manifold Match 3 Game
+
 Manifold match 3 game

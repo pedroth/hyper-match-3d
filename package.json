@@ -1,0 +1,11 @@
+{
+  "name": "manifold-match-3",
+  "module": "index.js",
+  "type": "module",
+  "dependencies": {
+    "@kmamal/sdl": "^0.10.7"
+  },
+  "trustedDependencies": [
+    "@kmamal/sdl"
+  ]
+}
