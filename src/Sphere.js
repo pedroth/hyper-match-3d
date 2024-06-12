@@ -1,3 +1,8 @@
+import Box from "./Box.js";
+import Color from "./Color.js";
+import { Diffuse } from "./Material.js";
+import Vec, { Vec2, Vec3 } from "./Vector.js";
+
 class Sphere {
     constructor(position, radius, props = {}) {
         this.radius = radius;
@@ -115,7 +120,7 @@ class PointBuilder {
         if (Object.values(attrs).some((x) => x === undefined)) {
             throw new Error("Point is incomplete");
         }
-        return new Sphere({ ...attrs, texture: this._texture });
+        return new Sphere(this._position, this._radius);
     }
 }
 

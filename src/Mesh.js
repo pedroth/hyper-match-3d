@@ -1,15 +1,16 @@
-import { Vec3, Vec2 } from "../Vector/Vector.js";
-import Sphere from "./Sphere.js"
-import Line from "./Line.js";
-import Triangle from "./Triangle.js";
-import { groupBy } from "../Utils/Utils.js";
-import { Diffuse } from "../Material/Material.js";
-import KScene from "../Scene/KScene.js"
+import { Diffuse } from "./Material.js";
+import Scene from "./Scene.js";
+import Sphere from "./Sphere.js";
+import { groupBy } from "./Utils.js";
+import { Vec3 } from "./Vector.js";
+
+
 //========================================================================================
 /*                                                                                      *
  *                                       CONSTANTS                                      *
  *                                                                                      */
 //========================================================================================
+
 let MESH_COUNTER = 0;
 const RADIUS = 0.001;
 
@@ -33,8 +34,8 @@ export default class Mesh {
 
     _init() {
         if (this._meshScene) return this;
-        this._meshScene = new KScene();
-        this._meshScene.addList(this.asTriangles());
+        this._meshScene = new Scene();
+        this._meshScene.addList(this.asSpheres(RADIUS));
         this._meshScene.rebuild();
         return this;
     }
@@ -129,9 +130,10 @@ export default class Mesh {
         })
     }
 
-    asPoints(radius = RADIUS) {
+    asSpheres(radius = RADIUS, filter = () => true) {
         const points = {};
         for (let i = 0; i < this.faces.length; i++) {
+            if(!filter(this.vertices[i], i)) continue;
             const texCoordIndexes = this
                 .faces[i]
                 .textures
@@ -182,38 +184,38 @@ export default class Mesh {
         return Object.values(lines);
     }
 
-    asTriangles() {
-        const triangles = [];
-        for (let i = 0; i < this.faces.length; i++) {
-            let texCoordIndexes = this
-                .faces[i]
-                .textures
-            const normalIndexes = this
-                .faces[i]
-                .normals
-            const verticesIndexes = this
-                .faces[i]
-                .vertices
-            const material = this.materials?.[i] ?? Diffuse();
-            const edge_id = verticesIndexes
-                .join("_");
-            const edge_name = `${this.name}_${edge_id}`;
-            triangles.push(
-                Triangle
-                    .builder()
-                    .name(edge_name)
-                    .texture(this.texture)
-                    .colors(...verticesIndexes.map(j => this.colors[j]))
-                    .normals(...normalIndexes.map(j => this.normals[j]))
-                    .positions(...verticesIndexes.map(j => this.vertices[j]))
-                    .texCoords(...texCoordIndexes.map(j => this.textureCoords[j]))
-                    .material(material)
-                    .build()
-            )
+    // asTriangles() {
+    //     const triangles = [];
+    //     for (let i = 0; i < this.faces.length; i++) {
+    //         let texCoordIndexes = this
+    //             .faces[i]
+    //             .textures
+    //         const normalIndexes = this
+    //             .faces[i]
+    //             .normals
+    //         const verticesIndexes = this
+    //             .faces[i]
+    //             .vertices
+    //         const material = this.materials?.[i] ?? Diffuse();
+    //         const edge_id = verticesIndexes
+    //             .join("_");
+    //         const edge_name = `${this.name}_${edge_id}`;
+    //         triangles.push(
+    //             Triangle
+    //                 .builder()
+    //                 .name(edge_name)
+    //                 .texture(this.texture)
+    //                 .colors(...verticesIndexes.map(j => this.colors[j]))
+    //                 .normals(...normalIndexes.map(j => this.normals[j]))
+    //                 .positions(...verticesIndexes.map(j => this.vertices[j]))
+    //                 .texCoords(...texCoordIndexes.map(j => this.textureCoords[j]))
+    //                 .material(material)
+    //                 .build()
+    //         )
 
-        }
-        return triangles;
-    }
+    //     }
+    //     return triangles;
+    // }
 
     static readObj(objFile, name = `Mesh_${MESH_COUNTER++}`) {
         const vertices = [];
@@ -303,14 +305,4 @@ function parseFace(vertexInfo) {
         if (k === 2) face.normals = indices;
     });
     return face;
-}
-
-function groupBy(array, groupFunction) {
-    const ans = {};
-    array.forEach((x, i) => {
-        const key = groupFunction(x, i);
-        if (!ans[key]) ans[key] = [];
-        ans[key].push(x);
-    });
-    return ans;
 }

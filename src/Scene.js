@@ -1,5 +1,7 @@
-import Box from "./Box";
-import { Vec3 } from "./Vector";
+import Box from "./Box.js";
+import PQueue from "./PQueue.js";
+import { argmin } from "./Utils.js";
+import Vec, { Vec3 } from "./Vector.js";
 
 export default class Scene {
   constructor(k = 10) {

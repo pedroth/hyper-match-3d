@@ -87,8 +87,11 @@ export default class Window {
     setPxl(x, y, color) {
         const w = this._width;
         const [i, j] = this.canvas2grid(x, y);
-        let index = w * i + j;
-        this._image[index] = color;
+        let index = 4 * (w * i + j);
+        this._image[index] = color[0] * MAX_8BIT;
+        this._image[index + 1] = color[1] * MAX_8BIT;
+        this._image[index + 2] = color[2] * MAX_8BIT;
+        this._image[index + 3] = MAX_8BIT;
         return this;
     }
 
@@ -98,8 +101,8 @@ export default class Window {
         let [i, j] = this.canvas2grid(x, y);
         i = mod(i, h);
         j = mod(j, w);
-        let index = w * i + j;
-        return this._image[index];
+        let index = 4 * (w * i + j);
+        return [this._image[index], this._image[index + 1], this._image[index + 2], this._image[index + 2]];
     }
 
     drawLine(p1, p2, shader) {
