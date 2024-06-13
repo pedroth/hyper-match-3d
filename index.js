@@ -4,26 +4,27 @@ import Camera from "./src/Camera.js";
 import Scene from "./src/Scene.js";
 import { Vec2, Vec3 } from "./src/Vector.js";
 import Window from "./src/Window.js";
-import Mesh from "./src/Mesh.js";
 import Image from "./src/Image.js";
+import Manifold from "./src/Manifold.js";
+import Mesh from "./src/Mesh.js";
 
-const width = 640;
-const height = 480;
-const radius = 0.05;
+const width = 640 / 2;
+const height = 480 / 2;
 const window = Window.ofSize(width, height);
 const camera = new Camera().orbit(5);
 const scene = new Scene();
 
 const backgroundImage = Image.ofUrl("./assets/map1.jpg");
 
-const meshObj = readFileSync("./assets/bunny.obj", { encoding: "utf-8" });
+const meshObj = readFileSync("./assets/bob.obj", { encoding: "utf-8" });
 let mesh = Mesh.readObj(meshObj, "mesh");
-const meshBox = mesh.getBoundingBox();
-const scale = meshBox.diagonal.fold((e, x) => Math.max(e, x), Number.MIN_VALUE);
-mesh = mesh.mapVertices(v => v.sub(meshBox.center).scale(2 / scale))
-scene.addList(
-    mesh.asSpheres(radius, (x, i) => Math.floor(i % 1.05) !== 0)
-)
+// const meshBox = mesh.getBoundingBox();
+// const scale = meshBox.diagonal.fold((e, x) => Math.max(e, x), Number.MIN_VALUE);
+// mesh = mesh.mapVertices(v => v.sub(meshBox.center).scale(2 / scale))
+mesh = mesh.mapVertices(v => Vec3(-v.x, -v.z, v.y));
+scene.addList(mesh.asSpheres(0.01));
+const manifold = Manifold.readObj(meshObj, "manifold")
+scene.add(manifold);
 
 
 //========================================================================================

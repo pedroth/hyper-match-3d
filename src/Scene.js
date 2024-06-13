@@ -18,7 +18,7 @@ export default class Scene {
   addList(elements) {
     for (let i = 0; i < elements.length; i++) {
       const elem = elements[i];
-      const { name } = elem;
+      const { name } = elem.props;
       this.id2ElemMap[name] = elem;
       this.sceneElements.push(elem);
       this.boundingBoxScene.add(elem);

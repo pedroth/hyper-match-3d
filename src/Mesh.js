@@ -2,7 +2,7 @@ import { Diffuse } from "./Material.js";
 import Scene from "./Scene.js";
 import Sphere from "./Sphere.js";
 import { groupBy } from "./Utils.js";
-import { Vec3 } from "./Vector.js";
+import { Vec2, Vec3 } from "./Vector.js";
 
 
 //========================================================================================
@@ -152,7 +152,6 @@ export default class Mesh {
                         .radius(radius)
                         .texture(this.texture)
                         .color(this.colors[verticesIndexes[j]])
-                        .normal(this.normals[normalIndexes[j]])
                         .position(this.vertices[verticesIndexes[j]])
                         .texCoord(this.textureCoords[texCoordIndexes[j]])
                         .build();
