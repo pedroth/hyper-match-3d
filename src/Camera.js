@@ -55,7 +55,7 @@ export default class Camera {
     return this;
   }
 
-  orbit(radius, theta, phi) {
+  orbit(radius = 1, theta = 0, phi = 0) {
     if (radius instanceof Function) {
       this._orbitCoords = radius(this._orbitCoords);
       radius = this._orbitCoords.x;

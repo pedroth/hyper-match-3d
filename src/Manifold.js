@@ -1,8 +1,8 @@
 import Graph from "./Graph.js";
 import Scene from "./Scene.js";
 import Sphere from "./Sphere.js";
-import { groupBy } from "./Utils.js";
-import { Vec3 } from "./Vector.js";
+import { groupBy, measureTime } from "./Utils.js";
+import Vec, { Vec3 } from "./Vector.js";
 
 
 //========================================================================================
@@ -23,7 +23,7 @@ export default class Manifold {
     constructor({ name, vertices, faces }) {
         this.name = name ?? `Manifold_${MANIFOLD_COUNTER++}`;
         this.props = { name: this.name }
-        this.vertices = vertices.map(v => Vec3(-v.x, v.z, v.y));
+        this.vertices = normalizeVertices(vertices);
         this.faces = faces;
         return this;
     }
@@ -167,8 +167,7 @@ function getSphereFromFace(triangle, id) {
             )
                 .length();
     }
-    // return new Sphere(barycentric, (radiusAverage / triangle.length), { name: `sphere_${id}` });
-    return new Sphere(barycentric, 0.05, { name: `sphere_${id}` });
+    return new Sphere(barycentric, radiusAverage / triangle.length, { name: `sphere_${id}`, color: Vec.RANDOM(3).toArray() });
 
 }
 
@@ -199,4 +198,21 @@ function parseFace(vertexInfo) {
         if (k === 0) face.vertices = indices;
     });
     return face;
+}
+
+
+function normalizeVertices(vertices) {
+    let min = Vec3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
+    let max = Vec3(Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE);
+    vertices.forEach(v => {
+        min = min.op(v, Math.min);
+        max = max.op(v, Math.max);
+
+    })
+    const diagonal = max.sub(min);
+    const center = min.add(diagonal.scale(0.5));
+    const scale = diagonal.fold((e, x) => Math.max(e, x), Number.MIN_VALUE);
+    return vertices
+        .map(v => v.sub(center).scale(1 / scale))
+        .map(v => Vec3(-v.x, v.z, v.y));
 }

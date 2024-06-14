@@ -6,23 +6,16 @@ import { Vec2, Vec3 } from "./src/Vector.js";
 import Window from "./src/Window.js";
 import Image from "./src/Image.js";
 import Manifold from "./src/Manifold.js";
-import Mesh from "./src/Mesh.js";
 
 const width = 640 / 2;
 const height = 480 / 2;
 const window = Window.ofSize(width, height);
-const camera = new Camera().orbit(5);
+const camera = new Camera().orbit(2);
 const scene = new Scene();
 
 const backgroundImage = Image.ofUrl("./assets/map1.jpg");
 
-const meshObj = readFileSync("./assets/bob.obj", { encoding: "utf-8" });
-let mesh = Mesh.readObj(meshObj, "mesh");
-// const meshBox = mesh.getBoundingBox();
-// const scale = meshBox.diagonal.fold((e, x) => Math.max(e, x), Number.MIN_VALUE);
-// mesh = mesh.mapVertices(v => v.sub(meshBox.center).scale(2 / scale))
-mesh = mesh.mapVertices(v => Vec3(-v.x, -v.z, v.y));
-scene.addList(mesh.asSpheres(0.01));
+const meshObj = readFileSync("./assets/megaman.obj", { encoding: "utf-8" });
 const manifold = Manifold.readObj(meshObj, "manifold")
 scene.add(manifold);
 
@@ -82,8 +75,8 @@ function render(ray) {
     const dir = ray.dir;
     const theta = Math.atan2(dir.y, dir.x) / (Math.PI);
     const alpha = Math.acos(-dir.z) / (Math.PI);
-    // console.log(`theta: ${theta}, alpha: ${alpha}`)
     return backgroundImage.getPxl(theta * backgroundImage.width, alpha * backgroundImage.height);
+    // return [0, 0, 0];
 }
 
 Animation

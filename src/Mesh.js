@@ -153,7 +153,6 @@ export default class Mesh {
                         .texture(this.texture)
                         .color(this.colors[verticesIndexes[j]])
                         .position(this.vertices[verticesIndexes[j]])
-                        .texCoord(this.textureCoords[texCoordIndexes[j]])
                         .build();
                 }
             }
