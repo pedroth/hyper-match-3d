@@ -201,7 +201,7 @@ export default class Image {
             const j = k % w;
             const x = j;
             const y = h - 1 - i;
-            img.setPxl(x, y, [r, g, b]);
+            img.setPxl(x, y, [r / MAX_8BIT, g / MAX_8BIT, b / MAX_8BIT]);
         }
         return img;
     }

@@ -23,6 +23,7 @@ const GAME_COLORS = {
     ORANGE: [1, 0.5, 0],
     PURPLE: [0.5, 0.1, 1],
 }
+const GAME_COLORS_KEYS = Object.keys(GAME_COLORS);
 
 //========================================================================================
 /*                                                                                      *
@@ -178,12 +179,13 @@ function getSphereFromFace(triangle, id) {
             )
                 .length();
     }
+    const colorKey = GAME_COLORS_KEYS[Math.floor(Math.random() * GAME_COLORS_KEYS.length)];
     return new Sphere(
         barycentric,
         radiusAverage / triangle.length,
         {
             name: `sphere_${id}`,
-            color: GAME_COLORS[Math.floor(Math.random() * GAME_COLORS.length)],
+            color: GAME_COLORS[colorKey],
             material: Diffuse()
         }
     );

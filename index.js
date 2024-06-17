@@ -57,7 +57,7 @@ window.onMouseMove((x, y) => {
 })
 window.onMouseWheel(({ dy }) => {
     camera.orbit(orbitCoord => orbitCoord.add(Vec3(-dy, 0, 0)));
-    camera.orbit(orbitCoord => Vec3(clamp(1,3)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
+    camera.orbit(orbitCoord => Vec3(clamp(1, 3)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
     exposedWindow = window.exposure();
 })
 
@@ -97,14 +97,12 @@ function trace(ray, scene, options) {
 
 function render(ray) {
     // return renderBackground(ray);
-    return trace(ray, scene, { bounces: 10 });
+    return trace(ray, scene, { bounces: 1});
 }
 
 Animation
     .loop(({ time, dt }) => {
         window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
         camera.rayMap(render).to(exposedWindow);
-        // camera.rayMap((ray) => ray.dir.map(x => (x + 1) / 2).toArray()).to(window);
-        // window.map((x, y) => [((x * time) / width) % 1, ((y * time) / height) % 1, 0]);
     })
     .play();

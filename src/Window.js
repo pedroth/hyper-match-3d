@@ -29,8 +29,6 @@ export default class Window {
     }
 
     paint() {
-        // const buffer = Buffer.allocUnsafe(this._image.length);
-        // buffer.set(this._image);
         this._window.render(this._width, this._height, this._width * 4, 'rgba32', this._image);
         return this;
     }
@@ -107,7 +105,7 @@ export default class Window {
             this._image[index] / MAX_8BIT,
             this._image[index + 1] / MAX_8BIT,
             this._image[index + 2] / MAX_8BIT,
-            this._image[index + 2] / MAX_8BIT
+            this._image[index + 3] / MAX_8BIT
         ];
     }
 
