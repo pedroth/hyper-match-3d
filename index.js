@@ -16,7 +16,7 @@ let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
 const scene = new Scene();
 
-const backgroundImage = Image.ofUrl("./assets/map1.jpg");
+const backgroundImage = Image.ofUrl("./assets/map2.jpg");
 
 const meshObj = readFileSync("./assets/megaman.obj", { encoding: "utf-8" });
 const manifold = Manifold.readObj(meshObj, "manifold")
@@ -57,7 +57,7 @@ window.onMouseMove((x, y) => {
 })
 window.onMouseWheel(({ dy }) => {
     camera.orbit(orbitCoord => orbitCoord.add(Vec3(-dy, 0, 0)));
-    camera.orbit(orbitCoord => Vec3(clamp(1, 3)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
+    camera.orbit(orbitCoord => Vec3(clamp(0.6, 3)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
     exposedWindow = window.exposure();
 })
 
@@ -67,10 +67,12 @@ window.onMouseWheel(({ dy }) => {
  *                                                                                      */
 //========================================================================================
 
+const clampAcos = clamp(-1,1);
+
 function renderBackground(ray) {
     const dir = ray.dir;
     const theta = Math.atan2(dir.y, dir.x) / (Math.PI);
-    const alpha = Math.acos(-dir.z) / (Math.PI);
+    const alpha = Math.acos(-clampAcos(dir.z)) / (Math.PI);
     return backgroundImage.getPxl(theta * backgroundImage.width, alpha * backgroundImage.height);
 }
 

@@ -1,16 +1,19 @@
 import Box from "./Box.js";
 import { MAX_8BIT } from "./Constants.js";
 import { Vec2 } from "./Vector.js";
-import { mod } from "./Utils.js";
+import { clamp, mod } from "./Utils.js";
 import { unlinkSync, readFileSync } from "fs";
 import { execSync } from "child_process";
+
+const clamp01 = clamp();
+
 
 export default class Image {
 
     constructor(width, height) {
         this._width = width;
         this._height = height;
-        this._image = new Uint8Array(this._width * this._height * 4);
+        this._image = new Float32Array(this._width * this._height * 4);
         this.box = new Box(Vec2(0, 0), Vec2(this._width, this._height))
     }
 
@@ -41,10 +44,10 @@ export default class Image {
             const y = h - 1 - i;
             const color = lambda(x, y);
             if (!color) return;
-            this._image[k] = color[0] * MAX_8BIT;
-            this._image[k + 1] = color[1] * MAX_8BIT;
-            this._image[k + 2] = color[2] * MAX_8BIT;
-            this._image[k + 3] = MAX_8BIT;
+            this._image[k] = color[0];
+            this._image[k + 1] = color[1];
+            this._image[k + 2] = color[2];
+            this._image[k + 3] = 1;
         }
         return this.paint();
     }
@@ -60,10 +63,10 @@ export default class Image {
         const w = this._width;
         const [i, j] = this.canvas2grid(x, y);
         let index = 4 * (w * i + j);
-        this._image[index] = color[0] * MAX_8BIT;
-        this._image[index + 1] = color[1] * MAX_8BIT;
-        this._image[index + 2] = color[2] * MAX_8BIT;
-        this._image[index + 3] = MAX_8BIT;
+        this._image[index] = color[0];
+        this._image[index + 1] = color[1];
+        this._image[index + 2] = color[2];
+        this._image[index + 3] = 1;
         return this;
     }
 
@@ -75,10 +78,10 @@ export default class Image {
         j = mod(j, w);
         let index = 4 * (w * i + j);
         return [
-            this._image[index] / MAX_8BIT,
-            this._image[index + 1] / MAX_8BIT,
-            this._image[index + 2] / MAX_8BIT,
-            this._image[index + 3] / MAX_8BIT
+            this._image[index],
+            this._image[index + 1],
+            this._image[index + 2],
+            this._image[index + 3]
         ];
     }
 
@@ -151,10 +154,10 @@ export default class Image {
                 const y = h - 1 - i;
                 const color = lambda(x, y);
                 if (!color) continue;
-                this._image[k] = this._image[k] + (color.red * MAX_8BIT - this._image[k]) / it;
-                this._image[k + 1] = this._image[k + 1] + (color.green * MAX_8BIT - this._image[k + 1]) / it;
-                this._image[k + 2] = this._image[k + 2] + (color.blue * MAX_8BIT - this._image[k + 2]) / it;
-                this._image[k + 3] = MAX_8BIT;
+                this._image[k] = this._image[k] + (color.red - this._image[k]) / it;
+                this._image[k + 1] = this._image[k + 1] + (color.green - this._image[k + 1]) / it;
+                this._image[k + 2] = this._image[k + 2] + (color.blue - this._image[k + 2]) / it;
+                this._image[k + 3] = 1;
             }
             if (it < time) it++
             return this.paint();
@@ -163,20 +166,13 @@ export default class Image {
     }
 
     toArray() {
-        const w = this._width;
-        const h = this._height;
         const imageData = new Uint8Array(this._width * this._height * 4);
-
-        for (let i = 0; i < h; i++) {
-            for (let j = 0; j < w; j++) {
-                let index = w * i + j;
-                const color = this._image[index];
-                index <<= 2; // multiply by 4
-                imageData[index] = color.red * MAX_8BIT;
-                imageData[index + 1] = color.green * MAX_8BIT;
-                imageData[index + 2] = color.blue * MAX_8BIT;
-                imageData[index + 3] = MAX_8BIT;
-            }
+        const n = this._image.length;
+        for (let k = 0; k < n; k += 4) {
+            imageData[k] = clamp01(this._image[k]) * MAX_8BIT;
+            imageData[k + 1] = clamp01(this._image[k + 1]) * MAX_8BIT;
+            imageData[k + 2] = clamp01(this._image[k + 2]) * MAX_8BIT;
+            imageData[k + 3] = MAX_8BIT;
         }
         return imageData;
     }

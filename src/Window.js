@@ -2,6 +2,8 @@ import sdl from "@kmamal/sdl"
 import Box from "./Box.js";
 import { Vec2 } from "./Vector.js";
 import { MAX_8BIT } from "./Constants.js";
+import { clamp } from "./Utils.js";
+const clamp01 = clamp();
 
 export default class Window {
 
@@ -10,7 +12,7 @@ export default class Window {
         this._height = height;
         this._title = title;
         this._window = sdl.video.createWindow({ title, resizable: true });
-        this._image = Buffer.allocUnsafe(this._width * this._height * 4);
+        this._image = new Float32Array(this._width * this._height * 4);
         this.box = new Box(Vec2(0, 0), Vec2(this._width, this._height));
     }
 
@@ -29,7 +31,9 @@ export default class Window {
     }
 
     paint() {
-        this._window.render(this._width, this._height, this._width * 4, 'rgba32', this._image);
+        const buffer = Buffer.allocUnsafe(this._image.length);
+        buffer.set(this._image.map(x => clamp01(x) * MAX_8BIT));
+        this._window.render(this._width, this._height, this._width * 4, 'rgba32', buffer);
         return this;
     }
 
@@ -47,10 +51,10 @@ export default class Window {
             const y = h - 1 - i;
             const color = lambda(x, y);
             if (!color) return;
-            this._image[k] = color[0] * MAX_8BIT;
-            this._image[k + 1] = color[1] * MAX_8BIT;
-            this._image[k + 2] = color[2] * MAX_8BIT;
-            this._image[k + 3] = MAX_8BIT;
+            this._image[k] = color[0];
+            this._image[k + 1] = color[1];
+            this._image[k + 2] = color[2];
+            this._image[k + 3] = 1;
         }
         return this.paint();
     }
@@ -87,10 +91,10 @@ export default class Window {
         const w = this._width;
         const [i, j] = this.canvas2grid(x, y);
         let index = 4 * (w * i + j);
-        this._image[index] = color[0] * MAX_8BIT;
-        this._image[index + 1] = color[1] * MAX_8BIT;
-        this._image[index + 2] = color[2] * MAX_8BIT;
-        this._image[index + 3] = MAX_8BIT;
+        this._image[index] = color[0];
+        this._image[index + 1] = color[1];
+        this._image[index + 2] = color[2];
+        this._image[index + 3] = 1;
         return this;
     }
 
@@ -102,10 +106,10 @@ export default class Window {
         j = mod(j, w);
         let index = 4 * (w * i + j);
         return [
-            this._image[index] / MAX_8BIT,
-            this._image[index + 1] / MAX_8BIT,
-            this._image[index + 2] / MAX_8BIT,
-            this._image[index + 3] / MAX_8BIT
+            this._image[index],
+            this._image[index + 1],
+            this._image[index + 2],
+            this._image[index + 3]
         ];
     }
 
@@ -177,10 +181,10 @@ export default class Window {
                 const y = h - 1 - i;
                 const color = lambda(x, y);
                 if (!color) return;
-                this._image[k] = this._image[k] + (color[0] * MAX_8BIT - this._image[k]) / it;
-                this._image[k + 1] = this._image[k + 1] + (color[1] * MAX_8BIT - this._image[k + 1]) / it;
-                this._image[k + 2] = this._image[k + 2] + (color[2] * MAX_8BIT - this._image[k + 2]) / it;
-                this._image[k + 3] = MAX_8BIT;
+                this._image[k] = this._image[k] + (color[0] - this._image[k]) / it;
+                this._image[k + 1] = this._image[k + 1] + (color[1] - this._image[k + 1]) / it;
+                this._image[k + 2] = this._image[k + 2] + (color[2] - this._image[k + 2]) / it;
+                this._image[k + 3] = 1;
             }
             if (it < time) it++
             return this.paint();
