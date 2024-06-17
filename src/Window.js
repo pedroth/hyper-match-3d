@@ -2,7 +2,6 @@ import sdl from "@kmamal/sdl"
 import Box from "./Box.js";
 import { Vec2 } from "./Vector.js";
 import { MAX_8BIT } from "./Constants.js";
-import Color from "./Color.js";
 
 export default class Window {
 
@@ -11,8 +10,8 @@ export default class Window {
         this._height = height;
         this._title = title;
         this._window = sdl.video.createWindow({ title, resizable: true });
-        this._image = Buffer.alloc(this._width * this._height * 4)
-        this.box = new Box(Vec2(0, 0), Vec2(this._width, this._height))
+        this._image = Buffer.allocUnsafe(this._width * this._height * 4);
+        this.box = new Box(Vec2(0, 0), Vec2(this._width, this._height));
     }
 
     get width() {
@@ -30,7 +29,9 @@ export default class Window {
     }
 
     paint() {
-        this._window.render(this._width, this._height, this._width * 4, 'rgba32', this._image)
+        // const buffer = Buffer.allocUnsafe(this._image.length);
+        // buffer.set(this._image);
+        this._window.render(this._width, this._height, this._width * 4, 'rgba32', this._image);
         return this;
     }
 
@@ -102,7 +103,12 @@ export default class Window {
         i = mod(i, h);
         j = mod(j, w);
         let index = 4 * (w * i + j);
-        return [this._image[index], this._image[index + 1], this._image[index + 2], this._image[index + 2]];
+        return [
+            this._image[index] / MAX_8BIT,
+            this._image[index + 1] / MAX_8BIT,
+            this._image[index + 2] / MAX_8BIT,
+            this._image[index + 2] / MAX_8BIT
+        ];
     }
 
     drawLine(p1, p2, shader) {
@@ -166,42 +172,22 @@ export default class Window {
             const n = this._image.length;
             const w = this._width;
             const h = this._height;
-            for (let k = 0; k < n; k++) {
-                const i = Math.floor(k / w);
-                const j = k % w;
+            for (let k = 0; k < n; k += 4) {
+                const i = Math.floor(k / (4 * w));
+                const j = Math.floor((k / 4) % w);
                 const x = j;
                 const y = h - 1 - i;
                 const color = lambda(x, y);
-                if (!color) continue;
-                this._image[k] = Color.ofRGB(
-                    this._image[k].red + (color.red - this._image[k].red) / it,
-                    this._image[k].green + (color.green - this._image[k].green) / it,
-                    this._image[k].blue + (color.blue - this._image[k].blue) / it,
-                );
+                if (!color) return;
+                this._image[k] = this._image[k] + (color[0] * MAX_8BIT - this._image[k]) / it;
+                this._image[k + 1] = this._image[k + 1] + (color[1] * MAX_8BIT - this._image[k + 1]) / it;
+                this._image[k + 2] = this._image[k + 2] + (color[2] * MAX_8BIT - this._image[k + 2]) / it;
+                this._image[k + 3] = MAX_8BIT;
             }
             if (it < time) it++
             return this.paint();
         }
         return ans;
-    }
-
-    toArray() {
-        const w = this._width;
-        const h = this._height;
-        const imageData = Buffer.alloc(w * h * 4);
-
-        for (let i = 0; i < h; i++) {
-            for (let j = 0; j < w; j++) {
-                let index = w * i + j;
-                const color = this._image[index];
-                index <<= 2; // multiply by 4
-                imageData[index] = Math.min(color.red * MAX_8BIT, MAX_8BIT);
-                imageData[index + 1] = Math.min(color.green * MAX_8BIT, MAX_8BIT);
-                imageData[index + 2] = Math.min(color.blue * MAX_8BIT, MAX_8BIT);
-                imageData[index + 3] = MAX_8BIT;
-            }
-        }
-        return imageData;
     }
 
     //========================================================================================

@@ -1,4 +1,5 @@
 import Graph from "./Graph.js";
+import { Diffuse } from "./Material.js";
 import Scene from "./Scene.js";
 import Sphere from "./Sphere.js";
 import { groupBy, measureTime } from "./Utils.js";
@@ -12,6 +13,16 @@ import Vec, { Vec3 } from "./Vector.js";
 //========================================================================================
 
 let MANIFOLD_COUNTER = 0;
+const GAME_COLORS = {
+    RED: [1, 0, 0],
+    GREEN: [0, 1, 0],
+    BLUE: [0, 0, 1],
+    YELLOW: [1, 1, 0],
+    CYAN: [0, 1, 1],
+    MAGENTA: [1, 1, 0],
+    ORANGE: [1, 0.5, 0],
+    PURPLE: [0.5, 0.1, 1],
+}
 
 //========================================================================================
 /*                                                                                      *
@@ -167,7 +178,15 @@ function getSphereFromFace(triangle, id) {
             )
                 .length();
     }
-    return new Sphere(barycentric, radiusAverage / triangle.length, { name: `sphere_${id}`, color: Vec.RANDOM(3).toArray() });
+    return new Sphere(
+        barycentric,
+        radiusAverage / triangle.length,
+        {
+            name: `sphere_${id}`,
+            color: GAME_COLORS[Math.floor(Math.random() * GAME_COLORS.length)],
+            material: Diffuse()
+        }
+    );
 
 }
 

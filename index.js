@@ -6,10 +6,13 @@ import { Vec2, Vec3 } from "./src/Vector.js";
 import Window from "./src/Window.js";
 import Image from "./src/Image.js";
 import Manifold from "./src/Manifold.js";
+import { Diffuse } from "./src/Material.js";
+import { clamp } from "./src/Utils.js";
 
 const width = 640 / 2;
 const height = 480 / 2;
 const window = Window.ofSize(width, height);
+let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
 const scene = new Scene();
 
@@ -50,9 +53,12 @@ window.onMouseMove((x, y) => {
         )
     ));
     mouse = newMouse;
+    exposedWindow = window.exposure();
 })
 window.onMouseWheel(({ dy }) => {
     camera.orbit(orbitCoord => orbitCoord.add(Vec3(-dy, 0, 0)));
+    camera.orbit(orbitCoord => Vec3(clamp(1,3)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
+    exposedWindow = window.exposure();
 })
 
 //========================================================================================
@@ -61,28 +67,43 @@ window.onMouseWheel(({ dy }) => {
  *                                                                                      */
 //========================================================================================
 
-function render(ray) {
-    const hit = scene.interceptWithRay(ray)
-    if (hit) {
-        const [, point, element] = hit;
-        const normal = element.normalToPoint(point);
-        return [
-            (normal.get(0) + 1) / 2,
-            (normal.get(1) + 1) / 2,
-            (normal.get(2) + 1) / 2
-        ]
-    }
+function renderBackground(ray) {
     const dir = ray.dir;
     const theta = Math.atan2(dir.y, dir.x) / (Math.PI);
     const alpha = Math.acos(-dir.z) / (Math.PI);
     return backgroundImage.getPxl(theta * backgroundImage.width, alpha * backgroundImage.height);
-    // return [0, 0, 0];
+}
+
+function trace(ray, scene, options) {
+    const { bounces } = options;
+    if (bounces < 0) return [0, 0, 0];
+    const hit = scene.interceptWithRay(ray);
+    if (!hit) return renderBackground(ray);
+    const [, p, e] = hit;
+    const color = e.props?.color ?? [0, 0, 0];
+    const mat = e.props?.material ?? Diffuse();
+    let r = mat.scatter(ray, p, e);
+    let finalC = trace(
+        r,
+        scene,
+        { bounces: bounces - 1 }
+    );
+    return [
+        finalC[0] + finalC[0] * color[0],
+        finalC[1] + finalC[1] * color[1],
+        finalC[2] + finalC[2] * color[2],
+    ];
+}
+
+function render(ray) {
+    // return renderBackground(ray);
+    return trace(ray, scene, { bounces: 10 });
 }
 
 Animation
     .loop(({ time, dt }) => {
         window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
-        camera.rayMap(render).to(window);
+        camera.rayMap(render).to(exposedWindow);
         // camera.rayMap((ray) => ray.dir.map(x => (x + 1) / 2).toArray()).to(window);
         // window.map((x, y) => [((x * time) / width) % 1, ((y * time) / height) % 1, 0]);
     })

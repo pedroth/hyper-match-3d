@@ -1,3 +1,5 @@
+import Vec from "./Vector.js";
+
 export function measureTime(lambda) {
     const t = performance.now();
     lambda()

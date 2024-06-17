@@ -74,7 +74,12 @@ export default class Image {
         i = mod(i, h);
         j = mod(j, w);
         let index = 4 * (w * i + j);
-        return [this._image[index], this._image[index + 1], this._image[index + 2], this._image[index + 2]];
+        return [
+            this._image[index] / MAX_8BIT,
+            this._image[index + 1] / MAX_8BIT,
+            this._image[index + 2] / MAX_8BIT,
+            this._image[index + 3] / MAX_8BIT
+        ];
     }
 
     drawLine(p1, p2, shader) {
