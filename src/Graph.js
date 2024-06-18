@@ -9,6 +9,10 @@ export default class Graph {
         return Object.values(this.vertices);
     }
 
+    getEdges() {
+        return Object.values(this.edges);
+    }
+
     addVertex(id, vertex = { id }) {
         this.vertices[id] = vertex;
         return this;

@@ -9,6 +9,23 @@ import Manifold from "./src/Manifold.js";
 import { Diffuse } from "./src/Material.js";
 import { clamp } from "./src/Utils.js";
 
+//========================================================================================
+/*                                                                                      *
+ *                                      GAME SETUP                                      *
+ *                                                                                      */
+//========================================================================================
+
+const MAX_LIGHT_SIMULATION_STEPS = 100;
+let lightSimSteps = 0;
+
+
+//========================================================================================
+/*                                                                                      *
+ *                                      SCENE SETUP                                     *
+ *                                                                                      */
+//========================================================================================
+
+
 const width = 640 / 2;
 const height = 480 / 2;
 const window = Window.ofSize(width, height);
@@ -16,9 +33,10 @@ let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
 const scene = new Scene();
 
-const backgroundImage = Image.ofUrl("./assets/map2.jpg");
+const backgroundImage = Image.ofUrl("./assets/map1.jpg");
+const uiImage = Image.ofSize(width, height);
 
-const meshObj = readFileSync("./assets/megaman.obj", { encoding: "utf-8" });
+const meshObj = readFileSync("./assets/simple_bunny.obj", { encoding: "utf-8" });
 const manifold = Manifold.readObj(meshObj, "manifold")
 scene.add(manifold);
 
@@ -54,11 +72,13 @@ window.onMouseMove((x, y) => {
     ));
     mouse = newMouse;
     exposedWindow = window.exposure();
+    lightSimSteps = 0;
 })
 window.onMouseWheel(({ dy }) => {
-    camera.orbit(orbitCoord => orbitCoord.add(Vec3(-dy, 0, 0)));
-    camera.orbit(orbitCoord => Vec3(clamp(0.6, 3)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
+    camera.orbit(orbitCoord => orbitCoord.add(Vec3(-dy * 0.5, 0, 0)));
+    camera.orbit(orbitCoord => Vec3(clamp(0.7, 3)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
     exposedWindow = window.exposure();
+    lightSimSteps = 0;
 })
 
 //========================================================================================
@@ -67,7 +87,7 @@ window.onMouseWheel(({ dy }) => {
  *                                                                                      */
 //========================================================================================
 
-const clampAcos = clamp(-1,1);
+const clampAcos = clamp(-1, 1);
 
 function renderBackground(ray) {
     const dir = ray.dir;
@@ -99,12 +119,13 @@ function trace(ray, scene, options) {
 
 function render(ray) {
     // return renderBackground(ray);
-    return trace(ray, scene, { bounces: 1});
+    return trace(ray, scene, { bounces: 1 });
 }
 
 Animation
     .loop(({ time, dt }) => {
         window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
-        camera.rayMap(render).to(exposedWindow);
+        if (lightSimSteps++ < MAX_LIGHT_SIMULATION_STEPS)
+            camera.rayMap(render).to(exposedWindow);
     })
     .play();

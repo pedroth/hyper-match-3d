@@ -51,6 +51,7 @@ export default class Manifold {
     _initGraph() {
         if (this._graph) return this;
         this._graph = createDualGraph(this.vertices, this.faces);
+        this._graph = differentColorGraph(this._graph);
         return this;
     }
 
@@ -132,29 +133,41 @@ export default class Manifold {
  *                                                                                      */
 //========================================================================================
 
-function getFaceId(face) {
-    return face.vertices.reduce((e, x) => e * (x + 1), 1);
+function getEdgeId(edge) {
+    return edge.sort((a, b) => a - b).join("_");
 }
 
-function commonEdge(fi, fj) {
-    const fiSet = new Set(fi.vertices);
-    const fjSet = new Set(fj.vertices);
-    const commonEdge = new Set();
-    fiSet.forEach(x => {
-        if (fjSet.has(x)) {
-            commonEdge.add(x);
-        }
-    })
-    return commonEdge.size === 2;
+function getFaceId(face) {
+    return face.vertices.sort((a, b) => a - b).join("_");
+}
+
+function edgesFromFace(face) {
+    const { vertices } = face;
+    return [[vertices[0], vertices[1]], [vertices[1], vertices[2]], [vertices[2], vertices[0]]];
 }
 
 function createDualGraph(vertices, faces) {
     // create dual graph of faces;
     const graph = new Graph();
+    const edgeMap = {};
     faces.forEach(fi => {
-        faces.forEach(fj => {
-            if (fi === fj) return;
-            if (commonEdge(fi, fj)) {
+        const primalEdges = edgesFromFace(fi);
+        primalEdges.forEach(edge => {
+            const edgeKey = getEdgeId(edge);
+            if (!(edgeKey in edgeMap)) {
+                edgeMap[edgeKey] = [];
+            }
+            edgeMap[edgeKey].push({ edge, face: fi });
+        })
+    })
+
+    Object.keys(edgeMap)
+        .forEach(edgeKeys => {
+            const edges = edgeMap[edgeKeys];
+            if (edges.length >= 2) {
+                const [edgeObjI, edgeObjJ] = edges;
+                const fi = edgeObjI.face;
+                const fj = edgeObjJ.face;
                 const i = getFaceId(fi);
                 const j = getFaceId(fj);
                 graph.addVertex(i, { id: i, sphere: getSphereFromFace(fi.vertices.map(x => vertices[x]), i) })
@@ -162,7 +175,6 @@ function createDualGraph(vertices, faces) {
                 graph.addEdge(i, j);
             }
         })
-    })
     return graph;
 }
 
@@ -221,7 +233,6 @@ function parseFace(vertexInfo) {
     return face;
 }
 
-
 function normalizeVertices(vertices) {
     let min = Vec3(Number.MAX_VALUE, Number.MAX_VALUE, Number.MAX_VALUE);
     let max = Vec3(Number.MIN_VALUE, Number.MIN_VALUE, Number.MIN_VALUE);
@@ -236,4 +247,46 @@ function normalizeVertices(vertices) {
     return vertices
         .map(v => v.sub(center).scale(1 / scale))
         .map(v => Vec3(-v.x, v.z, v.y));
+}
+
+
+function differentColorGraph(graph) {
+    const vertexStack = [];
+    const verifiedVertexId = new Set();
+    const vertices = graph.getVertices();
+    vertexStack.push(vertices[0])
+    while (vertexStack.length > 0) {
+        const v = vertexStack.pop();
+        const vColor = v.sphere.props.color;
+        const neighbors = graph.getNeighbors(v.id);
+        const neighborColors = neighbors.map(u => u.sphere.props.color);
+        neighbors.forEach(u => {
+            if (!verifiedVertexId.has(u.id)) {
+                vertexStack.push(u);
+            }
+        })
+        v.sphere.props.color = fixVertexColor(vColor, neighborColors);
+        verifiedVertexId.add(v.id);
+    }
+}
+
+function fixVertexColor(color, colors) {
+    let i = 0;
+    let c = color;
+    let notFixed = true;
+    const n = colors.length;
+    while (notFixed) {
+        while (equalsColor(c, colors[i])) {
+            const colorKey = GAME_COLORS_KEYS[Math.floor(Math.random() * GAME_COLORS_KEYS.length)];
+            c = GAME_COLORS[colorKey];
+        }
+        i = (i + 1) % n;
+    }
+}
+
+function equalsColor(a, b) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++)
+        if (a[i] !== b[i]) return false;
+    return true;
 }
