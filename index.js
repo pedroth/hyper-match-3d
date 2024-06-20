@@ -33,10 +33,10 @@ let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
 const scene = new Scene();
 
-const backgroundImage = Image.ofUrl("./assets/map1.jpg");
+const backgroundImage = Image.ofUrl("./assets/nasa.png");
 const uiImage = Image.ofSize(width, height);
 
-const meshObj = readFileSync("./assets/simple_bunny.obj", { encoding: "utf-8" });
+const meshObj = readFileSync("./assets/bob.obj", { encoding: "utf-8" });
 const manifold = Manifold.readObj(meshObj, "manifold")
 scene.add(manifold);
 
@@ -120,6 +120,11 @@ function trace(ray, scene, options) {
 function render(ray) {
     // return renderBackground(ray);
     return trace(ray, scene, { bounces: 1 });
+    // const hit = scene.interceptWithRay(ray);
+    // if(!hit) return renderBackground(ray);
+    // const [, p, e] = hit;
+    // const color = e.props?.color ?? [0, 0, 0];
+    // return color;
 }
 
 Animation
