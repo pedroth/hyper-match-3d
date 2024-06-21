@@ -1,4 +1,5 @@
 import Box from "./Box.js";
+import { randomPointInSphere } from "./Utils.js";
 import Vec from "./Vector.js";
 
 class Sphere {

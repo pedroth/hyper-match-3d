@@ -174,6 +174,7 @@ function createDualGraph(vertices, faces) {
                 graph.addVertex(i, { id: i, sphere: getSphereFromFace(fi.vertices.map(x => vertices[x]), i) })
                 graph.addVertex(j, { id: j, sphere: getSphereFromFace(fj.vertices.map(x => vertices[x]), j) })
                 graph.addEdge(i, j);
+                graph.addEdge(j, i);
             }
         })
     return graph;
@@ -202,7 +203,6 @@ function getSphereFromFace(triangle, id) {
             material: Diffuse()
         }
     );
-
 }
 
 function triangulate(polygon) {
@@ -255,45 +255,50 @@ function differentColorGraph(graph) {
     const vertexStack = [];
     const verifiedVertexId = new Set();
     const vertices = graph.getVertices();
-    vertexStack.push(...vertices);
+    vertexStack.push(vertices[0]);
     while (vertexStack.length > 0) {
         const v = vertexStack.pop();
         const vColorIndex = v.sphere.props.colorIndex;
         const neighbors = graph.getNeighbors(v.id);
         const neighborColors = neighbors.map(u => graph.getVertex(u).sphere.props.colorIndex);
         neighbors.forEach(u => {
-            if (!verifiedVertexId.has(u.id)) {
+            if (!verifiedVertexId.has(u)) {
                 vertexStack.push(graph.getVertex(u));
             }
         })
-        v.sphere.props.color = fixVertexColor(vColorIndex, neighborColors);
+        const fixedColorIndex = fixVertexColor(vColorIndex, neighborColors);
+        v.sphere.props.colorIndex = fixedColorIndex;
+        v.sphere.props.color = GAME_COLORS[GAME_COLORS_KEYS[fixedColorIndex]];
         verifiedVertexId.add(v.id);
     }
     return graph;
 }
 
 function fixVertexColor(colorIndex, colorIndexes) {
+    let isDifferentColors = true;
+    colorIndexes.forEach((cI) => isDifferentColors = isDifferentColors && cI !== colorIndex);
+    if (isDifferentColors) return colorIndex;
     /**
      * Each color is indexed by an index, so each color can be represented by 1 hot encoding
      * as binary. Eg. 010000 = 1, 001000 = 2, ...
      */
-    let bitAcc = 0;
     const colorBit = 1 << colorIndex; // encode vertex color
     const colorBites = colorIndexes.map(c => 1 << c); // encode neighbor colors
     // accumulate neighbor colors
+    let bitAcc = colorBit;
     colorBites.forEach(b => {
-        bitAcc = colorBit | b;
+        bitAcc = bitAcc | b;
     });
     const k = GAME_COLORS_KEYS.reduce((e, _, i) => e | 1 << i, 0);
-    bitAcc = k ^ bitAcc; // available colors
+    const availableColorBites = k ^ bitAcc; // available colors
     let availableColorIndex = 0;
-    GAME_COLORS_KEYS.forEach((_, i) => {
-        if (bitAcc >> i === 1) {
+    for (let i = 0; i < GAME_COLORS_KEYS.length; i++) {
+        if ((availableColorBites >> i & 0x1) === 1) {
             availableColorIndex = i;
-            return;
+            break;
         }
-    })
-    return GAME_COLORS[GAME_COLORS_KEYS[GAME_COLORS_KEYS.length - availableColorIndex]];
+    }
+    return availableColorIndex;
 }
 
 function equalsColor(a, b) {

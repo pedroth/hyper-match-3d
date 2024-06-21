@@ -8,6 +8,7 @@ import Image from "./src/Image.js";
 import Manifold from "./src/Manifold.js";
 import { Diffuse } from "./src/Material.js";
 import { clamp } from "./src/Utils.js";
+import Ray from "./src/Ray.js";
 
 //========================================================================================
 /*                                                                                      *
@@ -15,9 +16,17 @@ import { clamp } from "./src/Utils.js";
  *                                                                                      */
 //========================================================================================
 
+const DISTANCE_TO_DEFAULT_WINDOW_SIZE = 1;
 const MAX_LIGHT_SIMULATION_STEPS = 100;
 let lightSimSteps = 0;
 
+let selectedObjects = [];
+let selectedIndex = 0;
+
+const MIN_CAMERA_RADIUS = 0.7;
+const MAX_CAMERA_RADIUS = 3
+
+let passedResizeWindowThreshold = false;
 
 //========================================================================================
 /*                                                                                      *
@@ -26,17 +35,16 @@ let lightSimSteps = 0;
 //========================================================================================
 
 
-const width = 640 / 2;
-const height = 480 / 2;
-const window = Window.ofSize(width, height);
+const width = 640;
+const height = 480;
+let window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
 const scene = new Scene();
 
 const backgroundImage = Image.ofUrl("./assets/nasa.png");
-const uiImage = Image.ofSize(width, height);
 
-const meshObj = readFileSync("./assets/bob.obj", { encoding: "utf-8" });
+const meshObj = readFileSync("./assets/simple_bunny.obj", { encoding: "utf-8" });
 const manifold = Manifold.readObj(meshObj, "manifold")
 scene.add(manifold);
 
@@ -49,9 +57,19 @@ scene.add(manifold);
 
 let mousedown = false;
 let mouse = Vec2();
+const canvas2ray = camera.getRaysFromCanvas(window);
 window.onMouseDown((x, y) => {
     mousedown = true;
     mouse = Vec2(x, y);
+    const hit = scene.interceptWithRay(canvas2ray(x, y))
+    if (hit) {
+        selectedObjects[selectedIndex++] = hit[2];
+        exposedWindow = window.exposure();
+        if (selectedIndex === 2) {
+            selectedIndex = 0;
+            selectedObjects = [];
+        }
+    }
 })
 window.onMouseUp(() => {
     mousedown = false;
@@ -76,9 +94,21 @@ window.onMouseMove((x, y) => {
 })
 window.onMouseWheel(({ dy }) => {
     camera.orbit(orbitCoord => orbitCoord.add(Vec3(-dy * 0.5, 0, 0)));
-    camera.orbit(orbitCoord => Vec3(clamp(0.7, 3)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
+    camera.orbit(orbitCoord => Vec3(clamp(MIN_CAMERA_RADIUS, MAX_CAMERA_RADIUS)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
     exposedWindow = window.exposure();
     lightSimSteps = 0;
+    const [t2hit] = scene.boundingBoxScene.box.interceptWithRay(canvas2ray(width / 2, height / 2));
+    const passedCloseThreshold = !passedResizeWindowThreshold && t2hit <= DISTANCE_TO_DEFAULT_WINDOW_SIZE;
+    const passedFarThreshold = !passedResizeWindowThreshold && t2hit > DISTANCE_TO_DEFAULT_WINDOW_SIZE;
+    if (passedFarThreshold) {
+        exposedWindow.setSize(width, height);
+    }
+    if (passedCloseThreshold) {
+        const scaleInv = 4;
+        const w = Math.floor(width / scaleInv);
+        const h = Math.floor(height / scaleInv);
+        exposedWindow.setSize(w, h);
+    }
 })
 
 //========================================================================================
@@ -96,13 +126,30 @@ function renderBackground(ray) {
     return backgroundImage.getPxl(theta * backgroundImage.width, alpha * backgroundImage.height);
 }
 
+function colorFromSelectedObjects(p, scene) {
+    if (selectedObjects.length <= 0) return [0, 0, 0];
+    const [first] = selectedObjects;
+    const pointSample = first.sample();
+    const v = pointSample.sub(p);
+    const dir = v.normalize();
+    const hit = scene.interceptWithRay(Ray(p, dir));
+    if (hit) {
+        const e = hit[2];
+        if (e === first) {
+            return e.props.color;
+        }
+    }
+    return [0, 0, 0];
+}
+
 function trace(ray, scene, options) {
     const { bounces } = options;
-    if (bounces < 0) return [0, 0, 0];
+    if (bounces < 0) return colorFromSelectedObjects(ray.init, scene);
     const hit = scene.interceptWithRay(ray);
     if (!hit) return renderBackground(ray);
     const [, p, e] = hit;
     const color = e.props?.color ?? [0, 0, 0];
+    if (e === selectedObjects[0]) return color;
     const mat = e.props?.material ?? Diffuse();
     let r = mat.scatter(ray, p, e);
     let finalC = trace(
@@ -130,7 +177,7 @@ function render(ray) {
 Animation
     .loop(({ time, dt }) => {
         window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
-        if (lightSimSteps++ < MAX_LIGHT_SIMULATION_STEPS)
-            camera.rayMap(render).to(exposedWindow);
+        // if (lightSimSteps++ < MAX_LIGHT_SIMULATION_STEPS)
+        camera.rayMap(render).to(exposedWindow);
     })
     .play();
