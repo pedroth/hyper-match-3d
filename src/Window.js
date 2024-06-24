@@ -2,7 +2,10 @@ import sdl from "@kmamal/sdl"
 import Box from "./Box.js";
 import { Vec2 } from "./Vector.js";
 import { MAX_8BIT } from "./Constants.js";
-import { clamp } from "./Utils.js";
+import { clamp, memoize } from "./Utils.js";
+import os from 'node:os';
+import { Worker } from "node:worker_threads";
+
 const clamp01 = clamp();
 
 export default class Window {
@@ -85,6 +88,66 @@ export default class Window {
         return this.paint();
     }
 
+    mapParallel = memoize((lambda, dependencies = []) => {
+        const N = os.cpus().length;
+        const w = this._width;
+        const h = this._height;
+        const fun = ({ _start_row, _end_row, _width_, _height_, _worker_id_, _vars_ }) => {
+            const image = new Float32Array(4 * _width_ * (_end_row - _start_row));
+            const startIndex = 4 * _width_ * _start_row;
+            const endIndex = 4 * _width_ * _end_row;
+            let index = 0;
+            for (let k = startIndex; k < endIndex; k += 4) {
+                const i = Math.floor(k / (4 * _width_));
+                const j = Math.floor((k / 4) % _width_);
+                const x = j;
+                const y = _height_ - 1 - i;
+                const color = lambda(x, y, { ..._vars_ });
+                if (!color) return;
+                const [red, green, blue] = color;
+                image[index] = red;
+                image[index + 1] = green;
+                image[index + 2] = blue;
+                image[index + 3] = 1;
+                index += 4;
+            }
+            return { image, _start_row, _end_row, _worker_id_ };
+        }
+        const workers = [...Array(N)].map(() => createWorker(fun, lambda, dependencies));
+        return {
+            run: (vars = {}) => {
+                return new Promise((resolve) => {
+                    const allWorkersDone = [...Array(N)].fill(false);
+                    workers.forEach((worker, k) => {
+                        worker.on("message", (message) => {
+                            const { image, _start_row, _end_row, _worker_id_ } = message;
+                            let index = 0;
+                            const startIndex = 4 * w * _start_row;
+                            const endIndex = 4 * w * _end_row;
+                            for (let i = startIndex; i < endIndex; i++) {
+                                this._image[i] = image[index];
+                                index++;
+                            }
+                            allWorkersDone[_worker_id_] = true;
+                            if (allWorkersDone.every(x => x)) {
+                                return resolve(this.paint());
+                            }
+                        });
+                        const ratio = Math.floor(h / N);
+                        worker.postMessage({
+                            _start_row: k * ratio,
+                            _end_row: Math.min(h - 1, (k + 1) * ratio),
+                            _width_: w,
+                            _height_: h,
+                            _worker_id_: k,
+                            _vars_: vars
+                        });
+                    })
+                })
+            }
+        }
+    });
+
     /**
      * color: Color 
      */
@@ -94,25 +157,25 @@ export default class Window {
     }
 
     onMouseDown(lambda) {
-        this._eventHandlers["mouseButtonDown"] = lambda;
+        this._eventHandlers.mouseButtonDown = lambda;
         this._window.on("mouseButtonDown", handleMouse(this, lambda));
         return this;
     }
 
     onMouseUp(lambda) {
-        this._eventHandlers["mouseButtonUp"] = lambda;
+        this._eventHandlers.mouseButtonUp = lambda;
         this._window.on("mouseButtonUp", handleMouse(this, lambda));
         return this;
     }
 
     onMouseMove(lambda) {
-        this._eventHandlers["mouseMove"] = lambda;
+        this._eventHandlers.mouseMove = lambda;
         this._window.on("mouseMove", handleMouse(this, lambda));
         return this;
     }
 
     onMouseWheel(lambda) {
-        this._eventHandlers["mouseWheel"] = lambda;
+        this._eventHandlers.mouseWheel = lambda;
         this._window.on("mouseWheel", lambda);
         return this;
     }
@@ -120,7 +183,7 @@ export default class Window {
     setPxl(x, y, color) {
         const w = this._width;
         const [i, j] = this.canvas2grid(x, y);
-        let index = 4 * (w * i + j);
+        const index = 4 * (w * i + j);
         this._image[index] = color[0];
         this._image[index + 1] = color[1];
         this._image[index + 2] = color[2];
@@ -134,7 +197,7 @@ export default class Window {
         let [i, j] = this.canvas2grid(x, y);
         i = mod(i, h);
         j = mod(j, w);
-        let index = 4 * (w * i + j);
+        const index = 4 * (w * i + j);
         return [
             this._image[index],
             this._image[index + 1],
@@ -260,3 +323,20 @@ function handleMouse(canvas, lambda) {
         return lambda(x * canvas.width, canvas.height - 1 - y * canvas.height);
     }
 }
+
+const createWorker = (main, lambda, dependencies) => {
+    const workerFile = `
+    const {parentPort} = require("worker_threads")
+    const MAX_8BIT=${MAX_8BIT};
+    ${dependencies.map(d => d.toString()).join("\n")}
+    const lambda = ${lambda.toString()};
+    const __main__ = ${main.toString()};
+    parentPort.on("message", message => {
+        const output = __main__(message);
+        parentPort.postMessage(output);
+    });
+    `;
+    const worker = new Worker(workerFile, { eval: true });
+    // worker.setMaxListeners(50);
+    return worker;
+};

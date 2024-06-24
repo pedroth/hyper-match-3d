@@ -7,7 +7,7 @@ import Window from "./src/Window.js";
 import Image from "./src/Image.js";
 import Manifold from "./src/Manifold.js";
 import { Diffuse } from "./src/Material.js";
-import { clamp } from "./src/Utils.js";
+import { clamp, logTime, measureTime } from "./src/Utils.js";
 import Ray from "./src/Ray.js";
 
 //========================================================================================
@@ -63,8 +63,8 @@ window.onMouseDown((x, y) => {
     mouse = Vec2(x, y);
     const hit = scene.interceptWithRay(canvas2ray(x, y))
     if (hit) {
-        selectedObjects[selectedIndex++] = hit[2];
         exposedWindow = window.exposure();
+        selectedObjects[selectedIndex++] = hit[2];
         if (selectedIndex === 2) {
             selectedIndex = 0;
             selectedObjects = [];
@@ -97,18 +97,6 @@ window.onMouseWheel(({ dy }) => {
     camera.orbit(orbitCoord => Vec3(clamp(MIN_CAMERA_RADIUS, MAX_CAMERA_RADIUS)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
     exposedWindow = window.exposure();
     lightSimSteps = 0;
-    const [t2hit] = scene.boundingBoxScene.box.interceptWithRay(canvas2ray(width / 2, height / 2));
-    const passedCloseThreshold = !passedResizeWindowThreshold && t2hit <= DISTANCE_TO_DEFAULT_WINDOW_SIZE;
-    const passedFarThreshold = !passedResizeWindowThreshold && t2hit > DISTANCE_TO_DEFAULT_WINDOW_SIZE;
-    if (passedFarThreshold) {
-        exposedWindow.setSize(width, height);
-    }
-    if (passedCloseThreshold) {
-        const scaleInv = 4;
-        const w = Math.floor(width / scaleInv);
-        const h = Math.floor(height / scaleInv);
-        exposedWindow.setSize(w, h);
-    }
 })
 
 //========================================================================================
@@ -166,12 +154,12 @@ function trace(ray, scene, options) {
 
 function render(ray) {
     // return renderBackground(ray);
-    return trace(ray, scene, { bounces: 1 });
-    // const hit = scene.interceptWithRay(ray);
-    // if(!hit) return renderBackground(ray);
-    // const [, p, e] = hit;
-    // const color = e.props?.color ?? [0, 0, 0];
-    // return color;
+    // return trace(ray, scene, { bounces: 1 });
+    const hit = scene.interceptWithRay(ray);
+    if (!hit) return renderBackground(ray);
+    const [, p, e] = hit;
+    const color = e.props?.color ?? [0, 0, 0];
+    return color;
 }
 
 Animation

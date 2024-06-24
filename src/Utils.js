@@ -6,10 +6,11 @@ export function measureTime(lambda) {
     return 1e-3 * (performance.now() - t);
 }
 
-export async function measureTimeWithAsyncResult(lambda) {
+export function logTime(lambda) {
     const t = performance.now();
-    const result = await lambda();
-    return { result, time: 1e-3 * (performance.now() - t) };
+    const result = lambda();
+    console.log(`Took ${1e-3 * (performance.now() - t)}s`);
+    return result;
 }
 
 export function measureTimeWithResult(lambda) {
@@ -78,4 +79,17 @@ let i = 0;
 export function fRandom() {
     if (i > 1e6) i = 0;
     return RANDOM[i++ % RANDOM.length];
+}
+
+export function debounce(lambda, debounceTimeInMillis = 500) {
+    let timerId;
+    return function (...vars) {
+        if (timerId) {
+            clearTimeout(timerId);
+        }
+        timerId = setTimeout(() => {
+            lambda(...vars);
+        }, debounceTimeInMillis);
+        return true;
+    };
 }
