@@ -5,6 +5,8 @@ import { MAX_8BIT } from "./Constants.js";
 import { clamp, memoize } from "./Utils.js";
 import os from 'node:os';
 import { Worker } from "node:worker_threads";
+import { writeFileSync } from "node:fs";
+import path from "node:path";
 
 const clamp01 = clamp();
 
@@ -88,8 +90,8 @@ export default class Window {
         return this.paint();
     }
 
-    mapParallel = memoize((lambda, dependencies = []) => {
-        const N = os.cpus().length;
+    mapParallel = (lambda, dependencies = []) => {
+        const N = os.cpus().length / 4;
         const w = this._width;
         const h = this._height;
         const fun = ({ _start_row, _end_row, _width_, _height_, _worker_id_, _vars_ }) => {
@@ -144,7 +146,7 @@ export default class Window {
                     .then(() => this.paint());
             }
         }
-    });
+    };
 
     /**
      * color: Color 
@@ -324,8 +326,7 @@ function handleMouse(canvas, lambda) {
 
 const createWorker = (main, lambda, dependencies) => {
     const workerFile = `
-    const {parentPort} = require("worker_threads")
-    const MAX_8BIT=${MAX_8BIT};
+    import {parentPort} from "node:worker_threads"
     ${dependencies.map(d => d.toString()).join("\n")}
     const lambda = ${lambda.toString()};
     const __main__ = ${main.toString()};
@@ -334,7 +335,7 @@ const createWorker = (main, lambda, dependencies) => {
         parentPort.postMessage(output);
     });
     `;
-    const worker = new Worker(workerFile, { eval: true });
-    // worker.setMaxListeners(50);
+    writeFileSync("./worker.js", workerFile);
+    const worker = new Worker("./worker.js");
     return worker;
 };
