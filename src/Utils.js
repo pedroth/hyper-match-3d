@@ -44,7 +44,6 @@ export function argmin(array, costFunction = x => x) {
 }
 
 export function memoize(func) {
-    // not working...
     const cache = {}
     return (...args) => {
         const key = JSON.stringify(args.map(x => typeof x === "object" ? JSON.stringify(x) : x.toString()));

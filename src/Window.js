@@ -90,7 +90,7 @@ export default class Window {
         return this.paint();
     }
 
-    mapParallel = (lambda, dependencies = []) => {
+    mapParallel = memoize((lambda, dependencies = []) => {
         const N = os.cpus().length;
         const w = this._width;
         const h = this._height;
@@ -146,7 +146,7 @@ export default class Window {
                     .then(() => this.paint());
             }
         }
-    };
+    });
 
     /**
      * color: Color 
