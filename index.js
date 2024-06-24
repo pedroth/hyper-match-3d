@@ -128,18 +128,10 @@ function colorFromSelectedObjects(p, scene) {
     return [0, 0, 0];
 }
 
-let PREV_OBJ = undefined;
 function trace(ray, scene, options) {
     const { bounces } = options;
     if (bounces < 0) return colorFromSelectedObjects(ray.init, scene);
-    let hit;
-    if(PREV_OBJ && bounces >= 2) {
-        hit = PREV_OBJ.interceptWithRay(ray);
-    }
-    if(!hit && bounces >= 2) {
-        hit = scene.interceptWithRay(ray);
-        if(hit) PREV_OBJ = hit[2];
-    }
+    const hit = scene.interceptWithRay(ray);
     if (!hit) return renderBackground(ray);
     const [, p, e] = hit;
     const color = e.props?.color ?? [0, 0, 0];
@@ -160,7 +152,7 @@ function trace(ray, scene, options) {
 
 function render(ray) {
     // return renderBackground(ray);
-    return trace(ray, scene, { bounces: 2 });
+    return trace(ray, scene, { bounces: 1 });
     // const hit = scene.interceptWithRay(ray);
     // if (!hit) return renderBackground(ray);
     // const [, p, e] = hit;
