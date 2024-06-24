@@ -91,7 +91,7 @@ export default class Window {
     }
 
     mapParallel = (lambda, dependencies = []) => {
-        const N = os.cpus().length / 4;
+        const N = os.cpus().length;
         const w = this._width;
         const h = this._height;
         const fun = ({ _start_row, _end_row, _width_, _height_, _worker_id_, _vars_ }) => {
@@ -326,7 +326,7 @@ function handleMouse(canvas, lambda) {
 
 const createWorker = (main, lambda, dependencies) => {
     const workerFile = `
-    import {parentPort} from "node:worker_threads"
+    const { parentPort } = require("node:worker_threads");
     ${dependencies.map(d => d.toString()).join("\n")}
     const lambda = ${lambda.toString()};
     const __main__ = ${main.toString()};
@@ -335,7 +335,6 @@ const createWorker = (main, lambda, dependencies) => {
         parentPort.postMessage(output);
     });
     `;
-    writeFileSync("./worker.js", workerFile);
-    const worker = new Worker("./worker.js");
+    const worker = new Worker(workerFile, { eval: true });
     return worker;
 };
