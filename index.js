@@ -61,18 +61,17 @@ window.onMouseDown((x, y) => {
     mouse = Vec2(x, y);
     const hit = scene.interceptWithRay(canvas2ray(x, y))
     if (hit) {
+        exposedWindow = window.exposure();
         selectedObjects[selectedIndex++] = hit[2];
         if (selectedIndex === 2) {
             selectedIndex = 0;
             selectedObjects = [];
         }
     }
-    exposedWindow = window.setSize(width / 4, height / 4).exposure();
 })
 window.onMouseUp(() => {
     mousedown = false;
     mouse = Vec2();
-    exposedWindow = window.setSize(width, height).exposure();
 })
 window.onMouseMove((x, y) => {
     const newMouse = Vec2(x, y);
@@ -80,7 +79,6 @@ window.onMouseMove((x, y) => {
         return;
     }
     const [dx, dy] = newMouse.sub(mouse).toArray();
-    console.log(">>>", dx, dy);
     camera.orbit(orbitCoord => orbitCoord.add(
         Vec3(
             0,
@@ -133,6 +131,7 @@ function colorFromSelectedObjects(p, scene) {
 function trace(ray, scene, options) {
     const { bounces } = options;
     if (bounces < 0) return colorFromSelectedObjects(ray.init, scene);
+
     const hit = scene.interceptWithRay(ray);
     if (!hit) return renderBackground(ray);
     const [, p, e] = hit;
@@ -154,7 +153,7 @@ function trace(ray, scene, options) {
 
 function render(ray) {
     // return renderBackground(ray);
-    return trace(ray, scene, { bounces: 3 });
+    return trace(ray, scene, { bounces: 1 });
     // const hit = scene.interceptWithRay(ray);
     // if (!hit) return renderBackground(ray);
     // const [, p, e] = hit;

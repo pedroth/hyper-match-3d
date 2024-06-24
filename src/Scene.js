@@ -78,7 +78,7 @@ export default class Scene {
     }
     const initial = [this.boundingBoxScene.left, this.boundingBoxScene.right]
       .map(x => ({ node: x, distance: x.box.distanceToPoint(p) }));
-    let stack = PQueue.ofArray(initial, (a, b) => a.distance - b.distance);
+    const stack = PQueue.ofArray(initial, (a, b) => a.distance - b.distance);
     while (stack.length) {
       const { leaf, node } = stack.pop();
       if (leaf) return leaf.getElemNear(p);
@@ -101,7 +101,7 @@ export default class Scene {
 
   rebuild() {
     if (!this.sceneElements.length) return this;
-    let groupsQueue = PQueue.ofArray(
+    const groupsQueue = PQueue.ofArray(
       clusterLeafs(this.boundingBoxScene.box, this.sceneElements.map(x => new Leaf(x))),
       (a, b) => b.length - a.length
     )
