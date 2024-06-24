@@ -116,34 +116,32 @@ export default class Window {
         const workers = [...Array(N)].map(() => createWorker(fun, lambda, dependencies));
         return {
             run: (vars = {}) => {
-                return new Promise((resolve) => {
-                    const allWorkersDone = [...Array(N)].fill(false);
-                    workers.forEach((worker, k) => {
-                        worker.on("message", (message) => {
-                            const { image, _start_row, _end_row, _worker_id_ } = message;
-                            let index = 0;
-                            const startIndex = 4 * w * _start_row;
-                            const endIndex = 4 * w * _end_row;
-                            for (let i = startIndex; i < endIndex; i++) {
-                                this._image[i] = image[index];
-                                index++;
-                            }
-                            allWorkersDone[_worker_id_] = true;
-                            if (allWorkersDone.every(x => x)) {
-                                return resolve(this.paint());
-                            }
-                        });
-                        const ratio = Math.floor(h / N);
-                        worker.postMessage({
-                            _start_row: k * ratio,
-                            _end_row: Math.min(h - 1, (k + 1) * ratio),
-                            _width_: w,
-                            _height_: h,
-                            _worker_id_: k,
-                            _vars_: vars
-                        });
-                    })
-                })
+                return Promise
+                    .all(workers.map((worker, k) => {
+                        return new Promise((resolve) => {
+                            worker.on("message", (message) => {
+                                const { image, _start_row, _end_row, _worker_id_ } = message;
+                                let index = 0;
+                                const startIndex = 4 * w * _start_row;
+                                const endIndex = 4 * w * _end_row;
+                                for (let i = startIndex; i < endIndex; i++) {
+                                    this._image[i] = image[index];
+                                    index++;
+                                }
+                                return resolve();
+                            });
+                            const ratio = Math.floor(h / N);
+                            worker.postMessage({
+                                _start_row: k * ratio,
+                                _end_row: Math.min(h - 1, (k + 1) * ratio),
+                                _width_: w,
+                                _height_: h,
+                                _worker_id_: k,
+                                _vars_: vars
+                            });
+                        })
+                    }))
+                    .then(() => this.paint());
             }
         }
     });
