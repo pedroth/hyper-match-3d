@@ -1,4 +1,4 @@
-import { readFileSync } from "fs";
+import { readFileSync } from "node:fs";
 import Animation from "./src/Animation.js";
 import Camera from "./src/Camera.js";
 import Scene from "./src/Scene.js";
@@ -26,8 +26,6 @@ let selectedIndex = 0;
 const MIN_CAMERA_RADIUS = 0.7;
 const MAX_CAMERA_RADIUS = 3
 
-let passedResizeWindowThreshold = false;
-
 //========================================================================================
 /*                                                                                      *
  *                                      SCENE SETUP                                     *
@@ -37,7 +35,7 @@ let passedResizeWindowThreshold = false;
 
 const width = 640;
 const height = 480;
-let window = Window.ofSize(width, height);
+const window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
 const scene = new Scene();
@@ -63,17 +61,18 @@ window.onMouseDown((x, y) => {
     mouse = Vec2(x, y);
     const hit = scene.interceptWithRay(canvas2ray(x, y))
     if (hit) {
-        exposedWindow = window.exposure();
         selectedObjects[selectedIndex++] = hit[2];
         if (selectedIndex === 2) {
             selectedIndex = 0;
             selectedObjects = [];
         }
     }
+    exposedWindow = window.setSize(width / 4, height / 4).exposure();
 })
 window.onMouseUp(() => {
     mousedown = false;
     mouse = Vec2();
+    exposedWindow = window.setSize(width, height).exposure();
 })
 window.onMouseMove((x, y) => {
     const newMouse = Vec2(x, y);
@@ -81,6 +80,7 @@ window.onMouseMove((x, y) => {
         return;
     }
     const [dx, dy] = newMouse.sub(mouse).toArray();
+    console.log(">>>", dx, dy);
     camera.orbit(orbitCoord => orbitCoord.add(
         Vec3(
             0,
@@ -139,8 +139,8 @@ function trace(ray, scene, options) {
     const color = e.props?.color ?? [0, 0, 0];
     if (e === selectedObjects[0]) return color;
     const mat = e.props?.material ?? Diffuse();
-    let r = mat.scatter(ray, p, e);
-    let finalC = trace(
+    const r = mat.scatter(ray, p, e);
+    const finalC = trace(
         r,
         scene,
         { bounces: bounces - 1 }
@@ -154,12 +154,12 @@ function trace(ray, scene, options) {
 
 function render(ray) {
     // return renderBackground(ray);
-    // return trace(ray, scene, { bounces: 1 });
-    const hit = scene.interceptWithRay(ray);
-    if (!hit) return renderBackground(ray);
-    const [, p, e] = hit;
-    const color = e.props?.color ?? [0, 0, 0];
-    return color;
+    return trace(ray, scene, { bounces: 3 });
+    // const hit = scene.interceptWithRay(ray);
+    // if (!hit) return renderBackground(ray);
+    // const [, p, e] = hit;
+    // const color = e.props?.color ?? [0, 0, 0];
+    // return color;
 }
 
 Animation

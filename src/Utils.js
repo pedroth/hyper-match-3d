@@ -82,7 +82,7 @@ export function fRandom() {
 
 export function debounce(lambda, debounceTimeInMillis = 500) {
     let timerId;
-    return function (...vars) {
+    return (...vars) => {
         if (timerId) {
             clearTimeout(timerId);
         }

@@ -5,8 +5,6 @@ import { MAX_8BIT } from "./Constants.js";
 import { clamp, memoize } from "./Utils.js";
 import os from 'node:os';
 import { Worker } from "node:worker_threads";
-import { writeFileSync } from "node:fs";
-import path from "node:path";
 
 const clamp01 = clamp();
 
@@ -53,11 +51,11 @@ export default class Window {
         this._width = w;
         this._height = h;
         this.box = new Box(Vec2(0, 0), Vec2(this._width, this._height));
-        Object.keys(this._eventHandlers).forEach(eventName => {
-            if (eventName !== "mouseWheel") {
-                this._window.on(eventName, handleMouse(this, this._eventHandlers[eventName]));
-            }
-        })
+        // Object.keys(this._eventHandlers).forEach(eventName => {
+        //     if (eventName !== "mouseWheel") {
+        //         this._window.on(eventName, handleMouse(this, this._eventHandlers[eventName]));
+        //     }
+        // })
         return this;
     }
 
