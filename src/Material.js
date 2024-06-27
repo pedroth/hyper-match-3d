@@ -4,7 +4,7 @@ import { randomPointInSphere } from "./Utils.js";
 export function Diffuse() {
     return {
         scatter(inRay, point, element) {
-            let normal = element.normalToPoint(point);
+            const normal = element.normalToPoint(point);
             const randomInSphere = randomPointInSphere(3);
             if (randomInSphere.dot(normal) >= 0) return Ray(point, randomInSphere);
             return Ray(point, randomInSphere.scale(-1));
@@ -16,7 +16,7 @@ export function Metallic(fuzz = 0) {
     return {
         scatter(inRay, point, element) {
             fuzz = Math.min(1, Math.max(0, fuzz));
-            let normal = element.normalToPoint(point);
+            const normal = element.normalToPoint(point);
             const v = inRay.dir;
             let reflected = v.sub(normal.scale(2 * v.dot(normal)));
             reflected = reflected.add(randomPointInSphere(3).scale(fuzz)).normalize();

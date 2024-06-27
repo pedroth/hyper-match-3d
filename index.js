@@ -33,8 +33,8 @@ const MAX_CAMERA_RADIUS = 3
 //========================================================================================
 
 
-const width = 640;
-const height = 480;
+const width = 640/2;
+const height = 480/2;
 const window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
@@ -127,10 +127,19 @@ function colorFromSelectedObjects(p, scene) {
     }
     return [0, 0, 0];
 }
-
+let PREV_OBJ = undefined;
 function trace(ray, scene, options) {
     const { bounces } = options;
     if (bounces < 0) return colorFromSelectedObjects(ray.init, scene);
+    // let hit;
+    // if (PREV_OBJ && bounces >= 1) {
+    //     hit = PREV_OBJ.interceptWithRay(ray);
+    // }
+    // if (!hit && bounces >= 1) {
+    //     hit = scene.interceptWithRay(ray);
+    //     if (hit) PREV_OBJ = hit[2];
+    // }
+    // if (!hit) hit = scene.interceptWithRay(ray);
     const hit = scene.interceptWithRay(ray);
     if (!hit) return renderBackground(ray);
     const [, p, e] = hit;
