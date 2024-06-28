@@ -10,8 +10,9 @@ export function rayTrace(ray, scene, options) {
     if (!hit) return renderBackground(ray, backgroundImage);
     const [, p, e] = hit;
     const color = e.props?.color ?? [0, 0, 0];
-    console.log(">>>>", e.props.name === selectedObjects[0]);
-    if (selectedObjects.length > 0 && e.props.name === selectedObjects[0]) return color;
+    if (e.props.name === selectedObjects?.[0]?.props?.name) {
+        return color
+    };
     const mat = e.props?.material ?? Diffuse();
     const r = mat.scatter(ray, p, e);
     const finalC = rayTrace(
@@ -42,7 +43,7 @@ export function colorFromSelectedObjects(p, scene, selectedObjects) {
     const hit = scene.interceptWithRay(Ray(p, dir));
     if (hit) {
         const e = hit[2];
-        if (e === first) {
+        if (e.props.name === first.props.name) {
             return e.props.color;
         }
     }

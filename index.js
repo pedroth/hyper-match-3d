@@ -99,8 +99,9 @@ window.onMouseWheel(({ dy }) => {
 //========================================================================================
 
 function renderGame(canvas) {
+    const render = ray => rayTrace(ray, scene, { bounces: 1, backgroundImage, selectedObjects });
     return camera
-        .rayMap(ray => rayTrace(ray, scene, { bounces: 1, backgroundImage, selectedObjects }))
+        .rayMap(render)
         .to(canvas);
 }
 
