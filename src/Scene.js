@@ -1,5 +1,6 @@
 import Box from "./Box.js";
 import PQueue from "./PQueue.js";
+import Sphere from "./Sphere.js";
 import { argmin } from "./Utils.js";
 import Vec, { Vec3 } from "./Vector.js";
 
@@ -163,6 +164,17 @@ export default class Scene {
     }
     if (level === 0) return camera.reverseShot(debugScene, { clearScreen: false }).to(canvas);
     return canvas;
+  }
+
+  serialize() {
+    return this.getElements().map(x => x.serialize())
+  }
+
+  static deserialize(serializedScene) {
+    return new Scene()
+      .addList(serializedScene.map(x => {
+        if (x.type === Sphere.name) return Sphere.deserialize(x);
+      }));
   }
 }
 

@@ -119,6 +119,7 @@ export default class Window {
                 return Promise
                     .all(workers.map((worker, k) => {
                         return new Promise((resolve) => {
+                            worker.removeAllListeners('message');
                             worker.on("message", (message) => {
                                 const { image, _start_row, _end_row, _worker_id_ } = message;
                                 let index = 0;
@@ -178,17 +179,6 @@ export default class Window {
         return this;
     }
 
-    setPxl(x, y, color) {
-        const w = this._width;
-        const [i, j] = this.canvas2grid(x, y);
-        const index = 4 * (w * i + j);
-        this._image[index] = color[0];
-        this._image[index + 1] = color[1];
-        this._image[index + 2] = color[2];
-        this._image[index + 3] = 1;
-        return this;
-    }
-
     getPxl(x, y) {
         const w = this._width;
         const h = this._height;
@@ -202,6 +192,25 @@ export default class Window {
             this._image[index + 2],
             this._image[index + 3]
         ];
+    }
+
+    setPxl(x, y, color) {
+        const w = this._width;
+        const [i, j] = this.canvas2grid(x, y);
+        const index = 4 * (w * i + j);
+        this._image[index] = color[0];
+        this._image[index + 1] = color[1];
+        this._image[index + 2] = color[2];
+        this._image[index + 3] = 1;
+        return this;
+    }
+
+    setPxlData(index, [r, g, b]) {
+        this_image[index] = r;
+        this._image[index + 1] = g;
+        this._image[index + 2] = b;
+        this._image[index + 3] = 1.0;
+        return this;
     }
 
     drawLine(p1, p2, shader) {
@@ -253,7 +262,7 @@ export default class Window {
     exposure(time = Number.MAX_VALUE) {
         let it = 1;
         const ans = {};
-        for (let key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
+        for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
             const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this), key);
             if (descriptor && typeof descriptor.value === 'function') {
                 ans[key] = descriptor.value.bind(this);
@@ -275,8 +284,20 @@ export default class Window {
                 this._image[k] = this._image[k] + (color[0] - this._image[k]) / it;
                 this._image[k + 1] = this._image[k + 1] + (color[1] - this._image[k + 1]) / it;
                 this._image[k + 2] = this._image[k + 2] + (color[2] - this._image[k + 2]) / it;
-                this._image[k + 3] = 1;
+                this._image[k + 3] = 1.0;
             }
+            return ans.paint();
+        }
+
+        ans.setPxlData = (index, [r, g, b]) => {
+            this._image[index] = this._image[index] + (r - this._image[index]) / it;
+            this._image[index + 1] = this._image[index + 1] + (g - this._image[index + 1]) / it;
+            this._image[index + 2] = this._image[index + 2] + (b - this._image[index + 2]) / it;
+            this._image[index + 3] = 1.0;
+            return ans;
+        }
+
+        ans.paint = () => {
             if (it < time) it++
             return this.paint();
         }

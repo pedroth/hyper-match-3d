@@ -1,4 +1,5 @@
 import Box from "./Box.js";
+import { Diffuse } from "./Material.js";
 import { randomPointInSphere } from "./Utils.js";
 import Vec from "./Vector.js";
 
@@ -43,6 +44,31 @@ class Sphere {
         return p.sub(this.position).length() < this.radius;
     }
 
+    serialize() {
+        return {
+            type: Sphere.name,
+            radius: this.radius,
+            position: this.position.toArray(),
+            props: serializeProps(this.props)
+        }
+    }
+
+    static deserialize(json) {
+        return new Sphere(Vec.fromArray(json.position), json.radius, deserializeProps(json.props));
+    }
+
+}
+
+function serializeProps(props) {
+    return { color: props.color, name: props.name };
+}
+
+function deserializeProps(props) {
+    return {
+        color: props.color,
+        name: props.name,
+        material: Diffuse()
+    }
 }
 
 function sphereInterception(point, ray) {

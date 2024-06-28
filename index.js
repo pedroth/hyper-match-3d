@@ -6,19 +6,16 @@ import { Vec2, Vec3 } from "./src/Vector.js";
 import Window from "./src/Window.js";
 import Image from "./src/Image.js";
 import Manifold from "./src/Manifold.js";
-import { Diffuse } from "./src/Material.js";
-import { clamp, logTime, measureTime } from "./src/Utils.js";
-import Ray from "./src/Ray.js";
+import { clamp } from "./src/Utils.js";
+import { rayTrace } from "./src/RayTrace.js";
+import os from "node:os";
+import { Worker } from "node:worker_threads";
 
 //========================================================================================
 /*                                                                                      *
  *                                      GAME SETUP                                      *
  *                                                                                      */
 //========================================================================================
-
-const DISTANCE_TO_DEFAULT_WINDOW_SIZE = 1;
-const MAX_LIGHT_SIMULATION_STEPS = 100;
-let lightSimSteps = 0;
 
 let selectedObjects = [];
 let selectedIndex = 0;
@@ -33,8 +30,8 @@ const MAX_CAMERA_RADIUS = 3
 //========================================================================================
 
 
-const width = 640/2;
-const height = 480/2;
+const width = 640 / 2;
+const height = 480 / 2;
 const window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
@@ -44,7 +41,7 @@ const backgroundImage = Image.ofUrl("./assets/nasa.png");
 
 const meshObj = readFileSync("./assets/simple_bunny.obj", { encoding: "utf-8" });
 const manifold = Manifold.readObj(meshObj, "manifold")
-scene.add(manifold);
+scene.addList(manifold.asSpheres());
 
 
 //========================================================================================
@@ -55,7 +52,7 @@ scene.add(manifold);
 
 let mousedown = false;
 let mouse = Vec2();
-const canvas2ray = camera.getRaysFromCanvas(window);
+const canvas2ray = camera.rayFromImage(width, height);
 window.onMouseDown((x, y) => {
     mousedown = true;
     mouse = Vec2(x, y);
@@ -88,13 +85,11 @@ window.onMouseMove((x, y) => {
     ));
     mouse = newMouse;
     exposedWindow = window.exposure();
-    lightSimSteps = 0;
 })
 window.onMouseWheel(({ dy }) => {
     camera.orbit(orbitCoord => orbitCoord.add(Vec3(-dy * 0.5, 0, 0)));
     camera.orbit(orbitCoord => Vec3(clamp(MIN_CAMERA_RADIUS, MAX_CAMERA_RADIUS)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
     exposedWindow = window.exposure();
-    lightSimSteps = 0;
 })
 
 //========================================================================================
@@ -103,76 +98,80 @@ window.onMouseWheel(({ dy }) => {
  *                                                                                      */
 //========================================================================================
 
-const clampAcos = clamp(-1, 1);
-
-function renderBackground(ray) {
-    const dir = ray.dir;
-    const theta = Math.atan2(dir.y, dir.x) / (Math.PI);
-    const alpha = Math.acos(-clampAcos(dir.z)) / (Math.PI);
-    return backgroundImage.getPxl(theta * backgroundImage.width, alpha * backgroundImage.height);
+function renderGame(canvas) {
+    return camera
+        .rayMap(ray => rayTrace(ray, scene, { bounces: 1, backgroundImage, selectedObjects }))
+        .to(canvas);
 }
 
-function colorFromSelectedObjects(p, scene) {
-    if (selectedObjects.length <= 0) return [0, 0, 0];
-    const [first] = selectedObjects;
-    const pointSample = first.sample();
-    const v = pointSample.sub(p);
-    const dir = v.normalize();
-    const hit = scene.interceptWithRay(Ray(p, dir));
-    if (hit) {
-        const e = hit[2];
-        if (e === first) {
-            return e.props.color;
-        }
-    }
-    return [0, 0, 0];
-}
-let PREV_OBJ = undefined;
-function trace(ray, scene, options) {
-    const { bounces } = options;
-    if (bounces < 0) return colorFromSelectedObjects(ray.init, scene);
-    // let hit;
-    // if (PREV_OBJ && bounces >= 1) {
-    //     hit = PREV_OBJ.interceptWithRay(ray);
-    // }
-    // if (!hit && bounces >= 1) {
-    //     hit = scene.interceptWithRay(ray);
-    //     if (hit) PREV_OBJ = hit[2];
-    // }
-    // if (!hit) hit = scene.interceptWithRay(ray);
-    const hit = scene.interceptWithRay(ray);
-    if (!hit) return renderBackground(ray);
-    const [, p, e] = hit;
-    const color = e.props?.color ?? [0, 0, 0];
-    if (e === selectedObjects[0]) return color;
-    const mat = e.props?.material ?? Diffuse();
-    const r = mat.scatter(ray, p, e);
-    const finalC = trace(
-        r,
-        scene,
-        { bounces: bounces - 1 }
-    );
-    return [
-        finalC[0] + finalC[0] * color[0],
-        finalC[1] + finalC[1] * color[1],
-        finalC[2] + finalC[2] * color[2],
-    ];
-}
-
-function render(ray) {
-    // return renderBackground(ray);
-    return trace(ray, scene, { bounces: 1 });
-    // const hit = scene.interceptWithRay(ray);
-    // if (!hit) return renderBackground(ray);
-    // const [, p, e] = hit;
-    // const color = e.props?.color ?? [0, 0, 0];
-    // return color;
+let isFirstTime = true;
+const N = os.cpus().length;
+const WORKERS = [...Array(N)].map(() => new Worker("./src/RayTraceWorker.js", { type: 'module' }));
+function renderGameParallel(canvas) {
+    const w = width;
+    const h = height;
+    return Promise
+        .all(
+            WORKERS.map((worker, k) => {
+                return new Promise((resolve) => {
+                    worker.removeAllListeners('message');
+                    worker.on("message", message => {
+                        const { image, startRow, endRow, } = message;
+                        let index = 0;
+                        const startIndex = 4 * w * startRow;
+                        const endIndex = 4 * w * endRow;
+                        for (let i = startIndex; i < endIndex; i += 4) {
+                            canvas.setPxlData(i, [image[index++], image[index++], image[index++]]);
+                            index++;
+                        }
+                        resolve();
+                    });
+                    const ratio = Math.floor(h / WORKERS.length);
+                    const message = {
+                        width: w,
+                        height: h,
+                        params: { bounces: 1 },
+                        startRow: k * ratio,
+                        endRow: Math.min(h - 1, (k + 1) * ratio),
+                        camera: camera.serialize(),
+                        selectedObjects: selectedObjects.map(x => x.serialize()),
+                        isFirstTime
+                    };
+                    if (isFirstTime) {
+                        message.backgroundImage = backgroundImage.serialize();
+                        message.scene = scene.serialize();
+                    }
+                    worker.postMessage(message);
+                });
+            })
+        )
+        .then(() => {
+            isFirstTime = false;
+            return canvas.paint();
+        })
 }
 
-Animation
-    .loop(({ time, dt }) => {
+const params = process.argv.slice(2);
+if (params.length > 0 && params[0] === "-s") {
+    Animation
+        .loop(async ({ dt }) => {
+            renderGame(exposedWindow);
+            window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
+        })
+        .play();
+} else {
+    const play = async ({ time, oldT }) => {
+        const newT = new Date().getTime();
+        const dt = (newT - oldT) * 1e-3;
+        await renderGameParallel(exposedWindow);
         window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
-        // if (lightSimSteps++ < MAX_LIGHT_SIMULATION_STEPS)
-        camera.rayMap(render).to(exposedWindow);
-    })
-    .play();
+        setTimeout(() => play({
+            oldT: newT,
+            time: time + dt,
+        }));
+    }
+    play({ oldT: new Date().getTime(), time: 0 });
+}
+
+
+

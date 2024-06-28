@@ -66,6 +66,10 @@ export default class Manifold {
         return this._meshScene;
     }
 
+    asSpheres() {
+        return this.graph.getVertices().map(x => x.sphere);
+    }
+
     getBoundingBox() {
         if (this.boundingBox) return this.boundingBox;
         this.boundingBox = this.meshScene.boundingBoxScene.box;

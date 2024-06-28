@@ -1,15 +1,16 @@
 import Ray from "./Ray.js";
-import { Vec2, Vec3 } from "./Vector.js";
+import Vec, { Vec2, Vec3 } from "./Vector.js";
 
 export default class Camera {
   constructor(props = {}) {
-    const { lookAt, distanceToPlane, position } = props;
+    const { lookAt, distanceToPlane, position, orientCoords, orbitCoords } = props;
     this.lookAt = lookAt ?? Vec3(0, 0, 0);
     this.distanceToPlane = distanceToPlane ?? 1;
     this.position = position ?? Vec3(3, 0, 0);
-    this._orientCoords = Vec2();
-    this._orbitCoords = Vec3(this.position.length(), 0, 0);
-    this.orient();
+    this._orientCoords = orientCoords ?? Vec2();
+    this._orbitCoords = orbitCoords;
+    if (this._orbitCoords) this.orbit(...this._orbitCoords.toArray());
+    else this.orient(...this._orientCoords.toArray());
   }
 
   clone() {
@@ -17,6 +18,8 @@ export default class Camera {
       lookAt: this.lookAt,
       position: this.position,
       distanceToPlane: this.distanceToPlane,
+      orientCoords: this._orientCoords,
+      orbitCoords: this._orbitCoords,
     })
   }
 
@@ -124,9 +127,9 @@ export default class Camera {
     return x;
   }
 
-  getRaysFromCanvas(canvas) {
-    const w = canvas.width;
-    const h = canvas.height;
+  rayFromImage(width, height) {
+    const w = width;
+    const h = height;
     return (x, y) => {
       const dirInLocal = [
         (x / w - 0.5),
@@ -141,5 +144,25 @@ export default class Camera {
         .normalize()
       return Ray(this.position, dir);
     }
+  }
+
+  serialize() {
+    return {
+      lookAt: this.lookAt.toArray(),
+      distanceToPlane: this.distanceToPlane,
+      position: this.position.toArray(),
+      orientCoords: this._orientCoords.toArray(),
+      orbitCoords: this._orbitCoords.toArray(),
+    }
+  }
+
+  static deserialize(json) {
+    return new Camera({
+      lookAt: Vec.fromArray(json.lookAt),
+      distanceToPlane: json.distanceToPlane,
+      position: Vec.fromArray(json.position),
+      orientCoords: Vec.fromArray(json.orientCoords),
+      orbitCoords: Vec.fromArray(json.orbitCoords)
+    })
   }
 }

@@ -141,6 +141,14 @@ export default class Box {
         return this.min.add(Vec.RANDOM(this.dim).mul(this.diagonal));
     }
 
+    serialize() {
+        return { min: this.min.toArray(), max: this.max.toArray(), props: this.props }
+    }
+
+    static deserialize(json) {
+        return new Box(Vec.fromArray(json.min), Vec.fromArray(json.max), json.props);
+    }
+
     static EMPTY = new Box();
 }
 

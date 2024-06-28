@@ -11,7 +11,7 @@ const play = async ({ time, oldT }) => {
             return [((time * x) / width) % 1, ((time * y) / height) % 1, 0];
         })
         .run({ width, height, time });
-
+    window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
     setTimeout(() => play({
         oldT: newT,
         time: time + dt,

@@ -177,12 +177,21 @@ export default class Image {
         return imageData;
     }
 
+    serialize() {
+        return { width: this.width, height: this.height, image: this._image }
+    }
+
     //========================================================================================
     /*                                                                                      *
      *                                    Static Methods                                    *
      *                                                                                      */
     //========================================================================================
 
+    static deserialize(json) {
+        const img = new Image(json.width, json.height);
+        img._image = json.image;
+        return img;
+    }
 
     static ofUrl(url) {
         const { fileName } = getFileNameAndExtensionFromAddress(url);
