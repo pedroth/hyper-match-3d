@@ -10,6 +10,7 @@ import { clamp } from "./src/Utils.js";
 import { rayTrace } from "./src/RayTrace.js";
 import os from "node:os";
 import { Worker } from "node:worker_threads";
+import GameLogic from "./src/GameLogic.js";
 
 //========================================================================================
 /*                                                                                      *
@@ -21,7 +22,9 @@ let selectedObjects = [];
 let selectedIndex = 0;
 
 const MIN_CAMERA_RADIUS = 0.7;
-const MAX_CAMERA_RADIUS = 3
+const MAX_CAMERA_RADIUS = 3;
+
+const game = new GameLogic();
 
 //========================================================================================
 /*                                                                                      *
@@ -30,8 +33,8 @@ const MAX_CAMERA_RADIUS = 3
 //========================================================================================
 
 
-const width = 640 / 2;
-const height = 480 / 2;
+const width = 640;
+const height = 480;
 const window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
@@ -153,26 +156,22 @@ function renderGameParallel(canvas) {
 }
 
 const params = process.argv.slice(2);
-if (params.length > 0 && params[0] === "-s") {
-    Animation
-        .loop(async ({ dt }) => {
-            renderGame(exposedWindow);
-            window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
-        })
-        .play();
-} else {
-    const play = async ({ time, oldT }) => {
-        const newT = new Date().getTime();
-        const dt = (newT - oldT) * 1e-3;
-        await renderGameParallel(exposedWindow);
-        window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
-        setTimeout(() => play({
-            oldT: newT,
-            time: time + dt,
-        }));
-    }
-    play({ oldT: new Date().getTime(), time: 0 });
+const isParallel = !(params.length > 0 && params[0] === "-s")
+
+const play = async ({ time, oldT }) => {
+    const newT = new Date().getTime();
+    const dt = (newT - oldT) * 1e-3;
+
+    if(isParallel) await renderGameParallel(exposedWindow);
+    else renderGame(exposedWindow);
+
+    window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
+    setTimeout(() => play({
+        oldT: newT,
+        time: time + dt,
+    }));
 }
+play({ oldT: new Date().getTime(), time: 0 });
 
 
 

@@ -5,12 +5,12 @@ const clampAcos = clamp(-1, 1);
 
 export function rayTrace(ray, scene, options) {
     const { bounces, selectedObjects, backgroundImage } = options;
-    if (bounces < 0) return colorFromSelectedObjects(ray.init, scene, selectedObjects);
+    if (bounces < 0) return [0,0,0];//colorFromSelectedObjects(ray.init, scene, selectedObjects);
     const hit = scene.interceptWithRay(ray);
     if (!hit) return renderBackground(ray, backgroundImage);
     const [, p, e] = hit;
     const color = e.props?.color ?? [0, 0, 0];
-    if (e.props.name === selectedObjects?.[0]?.props?.name) {
+    if (selectedObjects.some(s => s.props.name === e.props.name)) {
         return color
     };
     const mat = e.props?.material ?? Diffuse();

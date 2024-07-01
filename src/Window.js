@@ -179,6 +179,14 @@ export default class Window {
         return this;
     }
 
+    onKeyDown(lambda) {
+        // TODO
+    }
+
+    onKeyUp(lambda) {
+        // TODO
+    }
+
     getPxl(x, y) {
         const w = this._width;
         const h = this._height;
