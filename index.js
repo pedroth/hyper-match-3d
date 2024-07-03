@@ -1,16 +1,15 @@
 import { readFileSync } from "node:fs";
-import Animation from "./src/Animation.js";
 import Camera from "./src/Camera.js";
 import Scene from "./src/Scene.js";
 import { Vec2, Vec3 } from "./src/Vector.js";
 import Window from "./src/Window.js";
 import Image from "./src/Image.js";
 import Manifold from "./src/Manifold.js";
-import { clamp } from "./src/Utils.js";
+import { clamp, loop } from "./src/Utils.js";
 import { rayTrace } from "./src/RayTrace.js";
 import os from "node:os";
 import { Worker } from "node:worker_threads";
-import GameLogic from "./src/GameLogic.js";
+import GameLogic from "./src/Game.js";
 
 //========================================================================================
 /*                                                                                      *
@@ -20,11 +19,12 @@ import GameLogic from "./src/GameLogic.js";
 
 let selectedObjects = [];
 let selectedIndex = 0;
+let neighbors = [];
 
 const MIN_CAMERA_RADIUS = 0.7;
 const MAX_CAMERA_RADIUS = 3;
 
-const game = new GameLogic();
+
 
 //========================================================================================
 /*                                                                                      *
@@ -33,16 +33,14 @@ const game = new GameLogic();
 //========================================================================================
 
 
-const width = 640;
-const height = 480;
+const width = 640/2;
+const height = 480/2;
 const window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
 const scene = new Scene();
-
 const backgroundImage = Image.ofUrl("./assets/nasa.png");
-
-const meshObj = readFileSync("./assets/simple_bunny.obj", { encoding: "utf-8" });
+const meshObj = readFileSync("./assets/megaman.obj", { encoding: "utf-8" });
 const manifold = Manifold.readObj(meshObj, "manifold")
 scene.addList(manifold.asSpheres());
 
@@ -62,10 +60,14 @@ window.onMouseDown((x, y) => {
     const hit = scene.interceptWithRay(canvas2ray(x, y))
     if (hit) {
         exposedWindow = window.exposure();
-        selectedObjects[selectedIndex++] = hit[2];
-        if (selectedIndex === 2) {
-            selectedIndex = 0;
-            selectedObjects = [];
+        if (selectedIndex === 0) {
+            selectedObjects[selectedIndex++] = hit[2];
+            return;
+        }
+        if (selectedIndex === 1) {
+            if (selectedObjects[0].props.id !== hit[2].props.id) {
+                selectedObjects[selectedIndex++] = hit[2];
+            }
         }
     }
 })
@@ -95,6 +97,11 @@ window.onMouseWheel(({ dy }) => {
     exposedWindow = window.exposure();
 })
 
+window.onKeyDown((event) => {
+    loopControl.stop();
+    window.close();
+})
+
 //========================================================================================
 /*                                                                                      *
  *                                       GAME LOOP                                      *
@@ -102,7 +109,7 @@ window.onMouseWheel(({ dy }) => {
 //========================================================================================
 
 function renderGame(canvas) {
-    const render = ray => rayTrace(ray, scene, { bounces: 1, backgroundImage, selectedObjects });
+    const render = ray => rayTrace(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
     return camera
         .rayMap(render)
         .to(canvas);
@@ -139,6 +146,7 @@ function renderGameParallel(canvas) {
                         endRow: Math.min(h - 1, (k + 1) * ratio),
                         camera: camera.serialize(),
                         selectedObjects: selectedObjects.map(x => x.serialize()),
+                        neighbors: neighbors.map(x => x.serialize()),
                         isFirstTime
                     };
                     if (isFirstTime) {
@@ -155,23 +163,30 @@ function renderGameParallel(canvas) {
         })
 }
 
+function gameUpdate() {
+    if (selectedObjects.length === 0) return;
+    if (selectedObjects.length === 1) {
+        neighbors = manifold
+            .graph
+            .getNeighbors(selectedObjects[0].props.id)
+            .map(id => manifold.graph.getVertex(id).sphere);
+    }
+    if (selectedObjects.length === 2) {
+        neighbors = [];
+        selectedIndex = 0;
+        selectedObjects = [];
+    }
+}
+
 const params = process.argv.slice(2);
 const isParallel = !(params.length > 0 && params[0] === "-s")
-
-const play = async ({ time, oldT }) => {
-    const newT = new Date().getTime();
-    const dt = (newT - oldT) * 1e-3;
-
-    if(isParallel) await renderGameParallel(exposedWindow);
+// Game loop
+const loopControl = loop(async (dt, time) => {
+    if (isParallel) await renderGameParallel(exposedWindow);
     else renderGame(exposedWindow);
-
+    gameUpdate()
     window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
-    setTimeout(() => play({
-        oldT: newT,
-        time: time + dt,
-    }));
-}
-play({ oldT: new Date().getTime(), time: 0 });
+})
 
 
 

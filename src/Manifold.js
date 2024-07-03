@@ -38,7 +38,6 @@ export default class Manifold {
         this.props = { name: this.name }
         this.vertices = normalizeVertices(vertices);
         this.faces = faces;
-        return this;
     }
 
     _initMesh() {
@@ -202,6 +201,7 @@ function getSphereFromFace(triangle, id) {
         barycentric,
         radiusAverage / triangle.length,
         {
+            id: id,
             name: `sphere_${id}`,
             colorIndex: colorKey,
             material: Diffuse()

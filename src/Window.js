@@ -59,6 +59,12 @@ export default class Window {
         return this;
     }
 
+    close() {
+        this._window.hide();
+        this._window.destroy();
+        return this;
+    }
+
     paint() {
         const buffer = Buffer.allocUnsafe(this._image.length);
         buffer.set(this._image.map(x => clamp01(x) * MAX_8BIT));
@@ -180,11 +186,13 @@ export default class Window {
     }
 
     onKeyDown(lambda) {
-        // TODO
+        this._window.on("keyDown", lambda);
+        return this;
     }
 
     onKeyUp(lambda) {
-        // TODO
+        this._window.on("keyDown", lambda);
+        return this;
     }
 
     getPxl(x, y) {

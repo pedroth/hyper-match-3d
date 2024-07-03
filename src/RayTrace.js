@@ -4,13 +4,17 @@ import { clamp } from "./Utils.js";
 const clampAcos = clamp(-1, 1);
 
 export function rayTrace(ray, scene, options) {
-    const { bounces, selectedObjects, backgroundImage } = options;
-    if (bounces < 0) return [0,0,0];//colorFromSelectedObjects(ray.init, scene, selectedObjects);
+    const { bounces, selectedObjects, backgroundImage, neighbors } = options;
+    // if (bounces < 0) return colorFromSelectedObjects(ray.init, scene, selectedObjects);
+    if (bounces < 0) return [0, 0, 0];
     const hit = scene.interceptWithRay(ray);
     if (!hit) return renderBackground(ray, backgroundImage);
     const [, p, e] = hit;
     const color = e.props?.color ?? [0, 0, 0];
-    if (selectedObjects.some(s => s.props.name === e.props.name)) {
+    if (
+        selectedObjects.some(s => s.props.name === e.props.name) ||
+        neighbors.some(s => s.props.name === e.props.name)
+    ) {
         return color
     };
     const mat = e.props?.material ?? Diffuse();
@@ -18,7 +22,7 @@ export function rayTrace(ray, scene, options) {
     const finalC = rayTrace(
         r,
         scene,
-        { bounces: bounces - 1, selectedObjects, backgroundImage }
+        { bounces: bounces - 1, selectedObjects, backgroundImage , neighbors}
     );
     return [
         finalC[0] + finalC[0] * color[0],

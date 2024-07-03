@@ -92,3 +92,26 @@ export function debounce(lambda, debounceTimeInMillis = 500) {
         return true;
     };
 }
+
+export function loop(lambda) {
+    let isFinished = false;
+    const loopControl = {
+        stop: () => {
+            isFinished = true;
+        }
+    };
+    const play = async ({ time, oldT }) => {
+        const newT = new Date().getTime();
+        const dt = (newT - oldT) * 1e-3;
+
+        await lambda(dt, time);
+
+        if (isFinished) return;
+        setTimeout(() => play({
+            oldT: newT,
+            time: time + dt,
+        }));
+    }
+    play({ oldT: new Date().getTime(), time: 0 });
+    return loopControl;
+}
