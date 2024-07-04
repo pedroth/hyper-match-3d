@@ -33,14 +33,14 @@ const MAX_CAMERA_RADIUS = 3;
 //========================================================================================
 
 
-const width = 640/2;
-const height = 480/2;
+const width = 640;
+const height = 480;
 const window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
 const scene = new Scene();
-const backgroundImage = Image.ofUrl("./assets/nasa.png");
-const meshObj = readFileSync("./assets/megaman.obj", { encoding: "utf-8" });
+const backgroundImage = Image.ofUrl("./assets/map4.jpg");
+const meshObj = readFileSync("./assets/simple_bunny.obj", { encoding: "utf-8" });
 const manifold = Manifold.readObj(meshObj, "manifold")
 scene.addList(manifold.asSpheres());
 
@@ -51,33 +51,43 @@ scene.addList(manifold.asSpheres());
  *                                                                                      */
 //========================================================================================
 
-let mousedown = false;
+let rightClick = false;
 let mouse = Vec2();
 const canvas2ray = camera.rayFromImage(width, height);
-window.onMouseDown((x, y) => {
-    mousedown = true;
+window.onMouseDown((x, y, e) => {
+    if (e.button === Window.RIGHT_CLICK) rightClick = true;
     mouse = Vec2(x, y);
+    if (rightClick) return;
     const hit = scene.interceptWithRay(canvas2ray(x, y))
     if (hit) {
-        exposedWindow = window.exposure();
         if (selectedIndex === 0) {
             selectedObjects[selectedIndex++] = hit[2];
-            return;
         }
         if (selectedIndex === 1) {
-            if (selectedObjects[0].props.id !== hit[2].props.id) {
+            const hitId = hit[2].props.id;
+            if (selectedObjects[0].props.id !== hitId && neighbors.some(x => x.props.id === hitId)) {
+                selectedObjects[selectedIndex++] = hit[2];
+            } else {
+                neighbors = [];
+                selectedIndex = 0;
+                selectedObjects = [];
                 selectedObjects[selectedIndex++] = hit[2];
             }
         }
+    } else {
+        neighbors = [];
+        selectedIndex = 0;
+        selectedObjects = [];
     }
+    exposedWindow = window.exposure();
 })
 window.onMouseUp(() => {
-    mousedown = false;
+    rightClick = false;
     mouse = Vec2();
 })
 window.onMouseMove((x, y) => {
     const newMouse = Vec2(x, y);
-    if (!mousedown || newMouse.equals(mouse)) {
+    if (!rightClick || newMouse.equals(mouse)) {
         return;
     }
     const [dx, dy] = newMouse.sub(mouse).toArray();
@@ -163,6 +173,30 @@ function renderGameParallel(canvas) {
         })
 }
 
+
+function renderGameFast(canvas) {
+    camera.raster(scene, backgroundImage).to(canvas);
+}
+
+
+function switchSpheres() {
+    const [i, j] = selectedObjects.map(x => x.props.id);
+    const p = selectedObjects[0].position;
+    const id = selectedObjects[0].props.id;
+    const name = selectedObjects[0].props.name;
+    selectedObjects[0].setPosition(selectedObjects[1].position);
+    selectedObjects[1].setPosition(p);
+    selectedObjects[0].props.id = selectedObjects[1].props.id;
+    selectedObjects[1].props.id = id;
+    selectedObjects[0].props.name = selectedObjects[1].props.name;
+    selectedObjects[1].props.name = name;
+    manifold.graph.switchVertices(i, j);
+}
+
+function updateManifold() {
+    scene.rebuild();
+}
+
 function gameUpdate() {
     if (selectedObjects.length === 0) return;
     if (selectedObjects.length === 1) {
@@ -172,10 +206,23 @@ function gameUpdate() {
             .map(id => manifold.graph.getVertex(id).sphere);
     }
     if (selectedObjects.length === 2) {
+        switchSpheres();
+        updateManifold();
+        isFirstTime = true;
         neighbors = [];
         selectedIndex = 0;
         selectedObjects = [];
     }
+}
+
+function simulate(dt) {
+    scene.getElements().forEach(s => {
+        const normalizedPos = s.position.normalize();
+        s.setPosition(s.position.add(normalizedPos.sub(s.position).scale(0.01)));
+    })
+    scene.rebuild();
+    isFirstTime = true;
+    exposedWindow = window.exposure();
 }
 
 const params = process.argv.slice(2);
@@ -184,7 +231,8 @@ const isParallel = !(params.length > 0 && params[0] === "-s")
 const loopControl = loop(async (dt, time) => {
     if (isParallel) await renderGameParallel(exposedWindow);
     else renderGame(exposedWindow);
-    gameUpdate()
+    gameUpdate();
+    // simulate(dt);
     window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
 })
 

@@ -75,7 +75,7 @@ export default class Window {
     /**
      * lambda: (x: Number, y: Number) => Color 
      */
-    map(lambda) {
+    map(lambda, paint = true) {
         const n = this._image.length;
         const w = this._width;
         const h = this._height;
@@ -91,7 +91,7 @@ export default class Window {
             this._image[k + 2] = color[2];
             this._image[k + 3] = 1;
         }
-        return this.paint();
+        return paint && this.paint();
     }
 
     mapParallel = memoize((lambda, dependencies = []) => {
@@ -157,8 +157,14 @@ export default class Window {
      * color: Color 
      */
     fill(color) {
-        this._image.fill(color);
-        return this;
+        if (!color) return;
+        const n = this._image.length;
+        for (let k = 0; k < n; k += 4) {
+            this._image[k] = color[0];
+            this._image[k + 1] = color[1];
+            this._image[k + 2] = color[2];
+            this._image[k + 3] = 1;
+        }
     }
 
     onMouseDown(lambda) {
@@ -342,6 +348,10 @@ export default class Window {
                 return image.get(x, y);
             })
     }
+
+    static LEFT_CLICK = 1;
+    static MIDDLE_CLICK = 2;
+    static RIGHT_CLICK = 3;
 }
 
 //========================================================================================
@@ -355,7 +365,7 @@ function handleMouse(canvas, lambda) {
         let { x, y } = e;
         x = x / canvas._window.width;
         y = y / canvas._window.height;
-        return lambda(x * canvas.width, canvas.height - 1 - y * canvas.height);
+        return lambda(x * canvas.width, canvas.height - 1 - y * canvas.height, e);
     }
 }
 

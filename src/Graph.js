@@ -40,6 +40,13 @@ export default class Graph {
     getNeighbors(i) {
         return Object.keys(this.vertexNeigh[i] ?? {});
     }
+
+    switchVertices(i, j) {
+        const v = this.vertices[i];
+        this.vertices[i] = this.vertices[j];
+        this.vertices[j] = v;
+        return this;
+    }
 }
 
 function edgeKey(i, j) {

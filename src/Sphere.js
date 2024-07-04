@@ -10,6 +10,11 @@ class Sphere {
         this.props = props;
     }
 
+    setPosition(pos) {
+        this.position = pos;
+        this.boundingBox = undefined;
+    }
+
     getBoundingBox() {
         if (this.boundingBox) return this.boundingBox;
         const n = this.position.dim;

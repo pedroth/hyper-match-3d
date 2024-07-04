@@ -1,4 +1,5 @@
 import Ray from "./Ray.js";
+import { renderBackground } from "./RayTrace.js";
 import Vec, { Vec2, Vec3 } from "./Vector.js";
 
 export default class Camera {
@@ -109,6 +110,28 @@ export default class Camera {
     }
   }
 
+  raster(scene, backgroundImage) {
+    return {
+      to: canvas => {
+        const w = canvas.width;
+        const h = canvas.height;
+        const rayGen = this.rayFromImage(w, h);
+        const zBuffer = new Float64Array(w * h).fill(Number.MAX_VALUE);
+        const elements = scene.getElements();
+        // canvas.map((x, y) => {
+        //   const ray = rayGen(x, y)
+        //   return renderBackground(ray, backgroundImage);
+        // }, false);
+        for (let i = 0; i < elements.length; i++) {
+          const sphere = elements[i];
+          rasterSphere({ sphere, camera: this, canvas, zBuffer });
+        }
+        canvas.paint();
+        return canvas;
+      }
+    }
+  }
+
   toCameraCoord(x) {
     let pointInCamCoord = x.sub(this.position);
     pointInCamCoord = Vec3(
@@ -164,5 +187,46 @@ export default class Camera {
       orientCoords: Vec.fromArray(json.orientCoords),
       orbitCoords: Vec.fromArray(json.orbitCoords)
     })
+  }
+}
+
+
+function rasterSphere({ sphere, canvas, zBuffer, camera }) {
+  const w = canvas.width;
+  const h = canvas.height;
+  const { distanceToPlane } = camera;
+  const position = sphere.position;
+  const radius = sphere.radius;
+  const { color } = sphere.props;
+  // camera coords
+  const posInCamCoord = camera.toCameraCoord(position)
+  //frustum culling
+  const z = posInCamCoord.z;
+  if (z < 0.1 * distanceToPlane) return;
+  //project
+  const projectedPoint = posInCamCoord
+    .scale(distanceToPlane / z);
+  // shader
+  let x = w / 2 + projectedPoint.x * w;
+  let y = h / 2 + projectedPoint.y * h;
+  x = Math.floor(x);
+  y = Math.floor(y);
+  if (x < 0 || x >= w || y < 0 || y >= h) return;
+  const intRadius = Math.ceil((radius) * (distanceToPlane / z) * w);
+  for (let k = -intRadius; k < intRadius; k++) {
+    for (let l = -intRadius; l < intRadius; l++) {
+      const xl = Math.max(0, Math.min(w - 1, x + k));
+      const yl = Math.floor(y + l);
+      const [i, j] = canvas.canvas2grid(xl, yl);
+      const zBufferIndex = Math.floor(w * i + j);
+      if (z < zBuffer[zBufferIndex]) {
+        zBuffer[zBufferIndex] = z;
+        canvas.setPxl(
+          xl,
+          yl,
+          color
+        )
+      }
+    }
   }
 }
