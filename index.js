@@ -193,8 +193,19 @@ function switchSpheres() {
     manifold.graph.switchVertices(i, j);
 }
 
+function is3match(i, j) {
+
+}
+
+funcizzz
+
 function updateManifold() {
-    scene.rebuild();
+    const ids = selectedObjects.map(x => x.props.id);
+    if(is3match(...ids)) {
+        const matchIds = findMatch(...ids);
+        removeSpheres(matchIds);
+        updateGraph();
+    };
 }
 
 function gameUpdate() {
