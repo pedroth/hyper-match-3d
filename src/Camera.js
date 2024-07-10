@@ -118,10 +118,10 @@ export default class Camera {
         const rayGen = this.rayFromImage(w, h);
         const zBuffer = new Float64Array(w * h).fill(Number.MAX_VALUE);
         const elements = scene.getElements();
-        // canvas.map((x, y) => {
-        //   const ray = rayGen(x, y)
-        //   return renderBackground(ray, backgroundImage);
-        // }, false);
+        canvas.map((x, y) => {
+          const ray = rayGen(x, y)
+          return renderBackground(ray, backgroundImage);
+        }, false);
         for (let i = 0; i < elements.length; i++) {
           const sphere = elements[i];
           rasterSphere({ sphere, camera: this, canvas, zBuffer });

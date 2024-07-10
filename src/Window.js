@@ -73,7 +73,7 @@ export default class Window {
     }
 
     /**
-     * lambda: (x: Number, y: Number) => Color 
+     * lambda: (x: Number, y: Number) => [r,g,b] 
      */
     map(lambda, paint = true) {
         const n = this._image.length;

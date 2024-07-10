@@ -7,8 +7,7 @@ import Vec, { Vec3 } from "./Vector.js";
 export default class Scene {
   constructor(k = 10) {
     this.k = k;
-    this.id2ElemMap = {};
-    this.sceneElements = [];
+    this.id2LeafMap = {};
     this.boundingBoxScene = new Node(k);
   }
 
@@ -18,23 +17,28 @@ export default class Scene {
 
   addList(elements) {
     for (let i = 0; i < elements.length; i++) {
-      const elem = elements[i];
-      const { name } = elem.props;
-      this.id2ElemMap[name] = elem;
-      this.sceneElements.push(elem);
-      this.boundingBoxScene.add(elem);
+      const leaf = new Leaf(elements[i]);
+      const { name } = leaf.element.props;
+      this.id2LeafMap[name] = leaf;
+      this.boundingBoxScene.add(leaf);
     }
     return this;
   }
 
   getElements() {
-    return this.sceneElements;
+    return Object.values(this.id2LeafMap).map(x => x.element);
   }
 
   clear() {
-    this.id2ElemMap = {};
-    this.sceneElements = [];
+    this.id2LeafMap = {};
     this.boundingBoxScene = new Node(this.k);
+  }
+
+  removeElementWithName(name) {
+    const leaf = this.id2LeafMap[name];
+    if (leaf) {
+      delete this.id2LeafMap[name];
+    }
   }
 
   distanceToPoint(p) {
@@ -101,9 +105,10 @@ export default class Scene {
   }
 
   rebuild() {
-    if (!this.sceneElements.length) return this;
+    const elements = this.getElements();
+    if (!elements.length) return this;
     const groupsQueue = PQueue.ofArray(
-      clusterLeafs(this.boundingBoxScene.box, this.sceneElements.map(x => new Leaf(x))),
+      clusterLeafs(this.boundingBoxScene.box, elements.map(x => new Leaf(x))),
       (a, b) => b.length - a.length
     )
     while (
@@ -124,7 +129,7 @@ export default class Scene {
       .data
       .map(group =>
         group.reduce((e, x) =>
-          e.add(x.element),
+          e.add(x),
           new Node(this.k)
         )
       );
@@ -138,32 +143,6 @@ export default class Scene {
     }
     this.boundingBoxScene = nodeOrLeafStack.pop();
     return this;
-  }
-
-  debug(props) {
-    const { camera, canvas } = props;
-    let { node, level, level2colors, debugScene } = props;
-    node = node || this.boundingBoxScene;
-    level = level || 0;
-    level2colors = level2colors || [];
-    debugScene = debugScene || new NaiveScene();
-    if (level === 0) {
-      let maxLevels = Math.round(Math.log2(node.numberOfLeafs / this.k)) + 1;
-      maxLevels = maxLevels === 0 ? 1 : maxLevels;
-      for (let i = 0; i <= maxLevels; i++)
-        level2colors.push(
-          Color.RED.scale(1 - i / maxLevels).add(Color.BLUE.scale(i / maxLevels))
-        );
-    }
-    debugScene = drawBox({ box: node.box, color: level2colors[level], debugScene });
-    if (!node.isLeaf && node.left) {
-      this.debug({ canvas, camera, node: node.left, level: level + 1, level2colors, debugScene })
-    }
-    if (!node.isLeaf && node.right) {
-      this.debug({ canvas, camera, node: node.right, level: level + 1, level2colors, debugScene })
-    }
-    if (level === 0) return camera.reverseShot(debugScene, { clearScreen: false }).to(canvas);
-    return canvas;
   }
 
   serialize() {
@@ -188,31 +167,32 @@ class Node {
     this.parent = undefined;
   }
 
-  add(element) {
+  add(leaf) {
     this.numberOfLeafs += 1;
-    const elemBox = element.getBoundingBox();
-    this.box = this.box.add(elemBox);
+    const leafBox = leaf.box;
+    this.box = this.box.add(leafBox);
     if (!this.left && !this.right) {
-      this.leafs.push(new Leaf(element));
+      this.leafs.push(leaf);
+      leaf.parent = this;
       if (this.leafs.length <= this.k) return this;
       // group children into cluster
       const [lefts, rights] = clusterLeafs(this.box, this.leafs);
-      this.left = new Node(this.k).addList(lefts.map(x => x.element));
-      this.right = new Node(this.k).addList(rights.map(x => x.element));
+      this.left = new Node(this.k).addList(lefts);
+      this.right = new Node(this.k).addList(rights);
       this.left.parent = this;
       this.right.parent = this;
       this.leafs = [];
     } else {
       const children = [this.left, this.right];
-      const index = argmin(children, x => element.boundingBox.distanceToBox(x.box));
-      children[index].add(element);
+      const index = argmin(children, x => leaf.box.distanceToBox(x.box));
+      children[index].add(leaf);
     }
     return this;
   }
 
-  addList(elements) {
-    for (let i = 0; i < elements.length; i++) {
-      this.add(elements[i]);
+  addList(leafs) {
+    for (let i = 0; i < leafs.length; i++) {
+      this.add(leafs[i]);
     }
     return this;
   }
@@ -306,7 +286,7 @@ class Node {
   }
 
   join(nodeOrLeaf) {
-    if (nodeOrLeaf.isLeaf) return this.add(nodeOrLeaf.element);
+    if (nodeOrLeaf.isLeaf) return this.add(nodeOrLeaf);
     const newNode = new Node(this.k);
     newNode.left = this;
     newNode.left.parent = newNode;
@@ -317,13 +297,20 @@ class Node {
     return newNode;
   }
 
+  removeLeaf(leaf) {
+    this.leafs = this.leafs.filter(l => l.name !== leaf.name);
+    return this;
+  }
+
 }
 
 class Leaf {
   isLeaf = true;
   constructor(element) {
+    this.name = element.props.name;
     this.element = element;
     this.box = element.getBoundingBox();
+    this.parent;
   }
 
   distanceToPoint(x) {

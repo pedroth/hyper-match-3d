@@ -5,11 +5,20 @@ import { Vec2, Vec3 } from "./src/Vector.js";
 import Window from "./src/Window.js";
 import Image from "./src/Image.js";
 import Manifold from "./src/Manifold.js";
-import { clamp, loop } from "./src/Utils.js";
+import { arrayEquals, loop } from "./src/Utils.js";
 import { rayTrace } from "./src/RayTrace.js";
 import os from "node:os";
 import { Worker } from "node:worker_threads";
-import GameLogic from "./src/Game.js";
+
+function clamp(min, max, x) {
+    if (x < min) {
+        return min;
+    } else if (x > max) {
+        return max;
+    } else {
+        return x;
+    }
+}
 
 //========================================================================================
 /*                                                                                      *
@@ -21,8 +30,10 @@ let selectedObjects = [];
 let selectedIndex = 0;
 let neighbors = [];
 
-const MIN_CAMERA_RADIUS = 0.7;
-const MAX_CAMERA_RADIUS = 3;
+const MIN_CAMERA_RADIUS = 0.5;
+const MAX_CAMERA_RADIUS = 2;
+const GOLDEN_RATIO = 1.618033988749;
+const MOUSE_WHEEL_FORCE = 0.05;
 
 
 
@@ -98,19 +109,49 @@ window.onMouseMove((x, y) => {
             -2 * Math.PI * (dy / window.height)
         )
     ));
+    const minCameraRadius = getMinCameraRadius();
+    camera.orbit(orbitCoord => Vec3(clamp(minCameraRadius, MAX_CAMERA_RADIUS, orbitCoord.x), orbitCoord.y, orbitCoord.z));
     mouse = newMouse;
     exposedWindow = window.exposure();
 })
 window.onMouseWheel(({ dy }) => {
-    camera.orbit(orbitCoord => orbitCoord.add(Vec3(-dy * 0.5, 0, 0)));
-    camera.orbit(orbitCoord => Vec3(clamp(MIN_CAMERA_RADIUS, MAX_CAMERA_RADIUS)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
+    const minCameraRadius = getMinCameraRadius();
+    camera.orbit(orbitCoord => orbitCoord.add(Vec3(-dy * MOUSE_WHEEL_FORCE, 0, 0)));
+    camera.orbit(orbitCoord => Vec3(clamp(minCameraRadius, MAX_CAMERA_RADIUS, orbitCoord.x), orbitCoord.y, orbitCoord.z))
     exposedWindow = window.exposure();
 })
 
 window.onKeyDown((event) => {
-    loopControl.stop();
-    window.close();
+    if ("escape" === event.key) {
+        loopControl.stop();
+        window.close();
+    }
 })
+
+function getMinCameraRadius() {
+    const samples = 50;
+    const w = window.width;
+    const h = window.height;
+    const alpha = 4;
+    const rangeX = w / alpha;
+    const rangeY = h / alpha;
+    const centerX = w / 2;
+    const centerY = h / 2;
+    let camera2SurfaceAvgDistance = 0;
+    for (let i = 0; i < samples; i++) {
+        const ray = canvas2ray(
+            centerX + Math.random() * rangeX,
+            centerY + Math.random() * rangeY
+        );
+        const hit = scene.interceptWithRay(ray);
+        if (hit) camera2SurfaceAvgDistance += hit[0];
+        else camera2SurfaceAvgDistance += MIN_CAMERA_RADIUS;
+    }
+    camera2SurfaceAvgDistance = (camera2SurfaceAvgDistance / samples);
+    const radius = camera.position.length();
+    const distance2Surface = radius - camera2SurfaceAvgDistance;
+    return GOLDEN_RATIO * distance2Surface;
+}
 
 //========================================================================================
 /*                                                                                      *
@@ -173,11 +214,9 @@ function renderGameParallel(canvas) {
         })
 }
 
-
 function renderGameFast(canvas) {
     camera.raster(scene, backgroundImage).to(canvas);
 }
-
 
 function switchSpheres() {
     const [i, j] = selectedObjects.map(x => x.props.id);
@@ -193,19 +232,53 @@ function switchSpheres() {
     manifold.graph.switchVertices(i, j);
 }
 
-function is3match(i, j) {
+function findMatch(id) {
+    const vertexIdStack = []
+    const matchingVertices = [];
+    const visitedVerticesSet = new Set().add(id);
+    const graph = manifold.graph;
+    const baseColor = graph.getVertex(id).sphere.props.color;
+    vertexIdStack.push(...graph.getNeighbors(id));
+    while (vertexIdStack.length > 0) {
+        const i = vertexIdStack.pop();
+        visitedVerticesSet.add(i);
+        const v = graph.getVertex(i);
+        const color = v.sphere.props.color;
+        if (arrayEquals(baseColor, color)) {
+            matchingVertices.push(v.id);
+            const neighbors = graph.getNeighbors(i);
+            neighbors.forEach(n => {
+                if (!visitedVerticesSet.has(n)) {
+                    vertexIdStack.push(n);
+                }
+            })
+        }
+    }
+    if (matchingVertices.length < 2) return [];
+    matchingVertices.push(id);
+    return matchingVertices;
 
 }
 
-funcizzz
+function removeSpheresWithId(id) {
+    const graph = manifold.graph;
+    const sphere = graph.getVertex(id).sphere;
+    scene.removeElementWithName(sphere.props.name);
+}
+
+function updateGraph() {
+
+}
 
 function updateManifold() {
     const ids = selectedObjects.map(x => x.props.id);
-    if(is3match(...ids)) {
-        const matchIds = findMatch(...ids);
-        removeSpheres(matchIds);
-        updateGraph();
-    };
+    ids.forEach(id => {
+        findMatch(id)
+            .forEach(sphereIds =>
+                removeSpheresWithId(sphereIds)
+            );
+    })
+    updateGraph();
 }
 
 function gameUpdate() {
@@ -219,6 +292,7 @@ function gameUpdate() {
     if (selectedObjects.length === 2) {
         switchSpheres();
         updateManifold();
+        scene.rebuild(); // also need to rebuild scene in main thread
         isFirstTime = true;
         neighbors = [];
         selectedIndex = 0;
@@ -241,7 +315,10 @@ const isParallel = !(params.length > 0 && params[0] === "-s")
 // Game loop
 const loopControl = loop(async (dt, time) => {
     if (isParallel) await renderGameParallel(exposedWindow);
-    else renderGame(exposedWindow);
+    else {
+        // renderGame(exposedWindow);
+        renderGameFast(window);
+    }
     gameUpdate();
     // simulate(dt);
     window.setTitle(`FPS: ${Math.floor(1 / dt)}`);

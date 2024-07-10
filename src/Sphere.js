@@ -1,5 +1,5 @@
 import Box from "./Box.js";
-import { Diffuse } from "./Material.js";
+import { Diffuse, Metallic } from "./Material.js";
 import { randomPointInSphere } from "./Utils.js";
 import Vec from "./Vector.js";
 

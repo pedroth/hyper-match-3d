@@ -31,7 +31,7 @@ export default class Image {
     }
 
     /**
-    * lambda: (x: Number, y: Number) => Color 
+    * lambda: (x: Number, y: Number) => [r,g,b] 
     */
     map(lambda) {
         const n = this._image.length;

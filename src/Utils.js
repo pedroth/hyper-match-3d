@@ -70,7 +70,16 @@ export function mod(n, m) {
 }
 
 export function clamp(min = 0, max = 1) {
-    return x => Math.max(min, Math.min(max, x));
+    // return x => Math.max(min, Math.min(max, x));
+    return x => {
+        if (x < min) {
+            return min;
+        } else if (x > max) {
+            return max;
+        } else {
+            return x;
+        }
+    }
 }
 
 const RANDOM = Array(1000).fill().map(Math.random);
@@ -114,4 +123,12 @@ export function loop(lambda) {
     }
     play({ oldT: new Date().getTime(), time: 0 });
     return loopControl;
+}
+
+export function arrayEquals(a, b) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return false;
+    }
+    return true;
 }
