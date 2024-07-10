@@ -1,7 +1,7 @@
 export default class Graph {
     constructor() {
         this.vertices = {}; // vertices map<id, vertex>
-        this.vertexNeigh = {}; // neighbor map<id, list<id>>
+        this.vertexNeigh = {}; // neighbor map<id, map<id, bool>>
         this.edges = {};
     }
 
@@ -13,8 +13,9 @@ export default class Graph {
         return Object.values(this.edges);
     }
 
-    addVertex(id, vertex = { id }) {
+    addVertex(id, vertex = {}) {
         this.vertices[id] = vertex;
+        this.vertices[id].id = id;
         return this;
     }
 
@@ -22,13 +23,16 @@ export default class Graph {
         return this.vertices[id];
     }
 
-    addEdge(i, j, edge = { id: edgeKey(i, j) }) {
+    addEdge(i, j, edge = {}) {
         const edgeIDs = [i, j];
+        if (!this.getVertex(i)) return new Error(`Vertex ${i} needs to be created before adding an edge`);
+        if (!this.getVertex(j)) return new Error(`Vertex ${j} needs to be created before adding an edge`);
         edgeIDs.forEach(id => {
-            if (!this.vertices[id]) this.addVertex(id, { id });
             if (!this.vertexNeigh[id]) this.vertexNeigh[id] = {};
         })
-        this.edges[edgeKey(i, j)] = edge;
+        const edgeKeyID = edgeKey(i, j);
+        this.edges[edgeKeyID] = edge;
+        this.edges[edgeKeyID].id = edgeKeyID;
         this.vertexNeigh[i][j] = true;
         return this;
     }
@@ -42,9 +46,36 @@ export default class Graph {
     }
 
     switchVertices(i, j) {
+        if (!this.vertices[i]) return this;
+        if (!this.vertices[j]) return this;
         const v = this.vertices[i];
         this.vertices[i] = this.vertices[j];
+        this.vertices[i].id = j;
         this.vertices[j] = v;
+        this.vertices[j].id = i;
+        return this;
+    }
+
+    removeVertex(i) {
+        if (!this.vertices[i]) return this;
+        console.log(`remove vertex ${i}`);
+        this.getVertices().forEach(j => {
+            if (j in this.vertexNeigh && i in this.vertexNeigh[j]) {
+                this.removeEdge(j, i);
+            }
+        })
+        this.getNeighbors(i).forEach(j => {
+            this.removeEdge(i, j);
+        })
+        delete this.vertices[i];
+        return this;
+    }
+
+    removeEdge(i, j) {
+        const edgeKeyID = edgeKey(i, j);
+        if (!this.edges[edgeKeyID]) return this;
+        console.log(`remove edge ${i} | ${j}`);
+        delete this.edges[edgeKeyID];
         return this;
     }
 }

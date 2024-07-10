@@ -35,8 +35,6 @@ const MAX_CAMERA_RADIUS = 2;
 const GOLDEN_RATIO = 1.618033988749;
 const MOUSE_WHEEL_FORCE = 0.05;
 
-
-
 //========================================================================================
 /*                                                                                      *
  *                                      SCENE SETUP                                     *
@@ -44,8 +42,8 @@ const MOUSE_WHEEL_FORCE = 0.05;
 //========================================================================================
 
 
-const width = 640;
-const height = 480;
+const width = 640 / 2;
+const height = 480 / 2;
 const window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
@@ -220,6 +218,7 @@ function renderGameFast(canvas) {
 
 function switchSpheres() {
     const [i, j] = selectedObjects.map(x => x.props.id);
+    selectedObjects.forEach(s => scene.removeElementWithName(s.props.name));
     const p = selectedObjects[0].position;
     const id = selectedObjects[0].props.id;
     const name = selectedObjects[0].props.name;
@@ -229,6 +228,7 @@ function switchSpheres() {
     selectedObjects[1].props.id = id;
     selectedObjects[0].props.name = selectedObjects[1].props.name;
     selectedObjects[1].props.name = name;
+    selectedObjects.forEach(s => scene.add(s));
     manifold.graph.switchVertices(i, j);
 }
 
@@ -263,22 +263,18 @@ function findMatch(id) {
 function removeSpheresWithId(id) {
     const graph = manifold.graph;
     const sphere = graph.getVertex(id).sphere;
+    graph.removeVertex(id);
     scene.removeElementWithName(sphere.props.name);
-}
-
-function updateGraph() {
-
 }
 
 function updateManifold() {
     const ids = selectedObjects.map(x => x.props.id);
     ids.forEach(id => {
         findMatch(id)
-            .forEach(sphereIds =>
+            .forEach(sphereIds => {
                 removeSpheresWithId(sphereIds)
-            );
+            });
     })
-    updateGraph();
 }
 
 function gameUpdate() {
@@ -298,16 +294,6 @@ function gameUpdate() {
         selectedIndex = 0;
         selectedObjects = [];
     }
-}
-
-function simulate(dt) {
-    scene.getElements().forEach(s => {
-        const normalizedPos = s.position.normalize();
-        s.setPosition(s.position.add(normalizedPos.sub(s.position).scale(0.01)));
-    })
-    scene.rebuild();
-    isFirstTime = true;
-    exposedWindow = window.exposure();
 }
 
 const params = process.argv.slice(2);

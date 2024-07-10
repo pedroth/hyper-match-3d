@@ -174,8 +174,8 @@ function createDualGraph(vertices, faces) {
                 const fj = edgeObjJ.face;
                 const i = getFaceId(fi);
                 const j = getFaceId(fj);
-                graph.addVertex(i, { id: i, sphere: getSphereFromFace(fi.vertices.map(x => vertices[x]), i) })
-                graph.addVertex(j, { id: j, sphere: getSphereFromFace(fj.vertices.map(x => vertices[x]), j) })
+                graph.addVertex(i, { sphere: getSphereFromFace(fi.vertices.map(x => vertices[x]), i) })
+                graph.addVertex(j, { sphere: getSphereFromFace(fj.vertices.map(x => vertices[x]), j) })
                 graph.addEdge(i, j);
                 graph.addEdge(j, i);
             }
