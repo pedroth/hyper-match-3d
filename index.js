@@ -127,23 +127,26 @@ window.onKeyDown((event) => {
 })
 
 function getMinCameraRadius() {
-    const samples = 50;
+    const iterations = 50;
+    let samples = 0;
     const w = window.width;
     const h = window.height;
-    const alpha = 4;
+    const alpha = 1;
     const rangeX = w / alpha;
     const rangeY = h / alpha;
     const centerX = w / 2;
     const centerY = h / 2;
     let camera2SurfaceAvgDistance = 0;
-    for (let i = 0; i < samples; i++) {
+    for (let i = 0; i < iterations; i++) {
         const ray = canvas2ray(
             centerX + Math.random() * rangeX,
             centerY + Math.random() * rangeY
         );
         const hit = scene.interceptWithRay(ray);
-        if (hit) camera2SurfaceAvgDistance += hit[0];
-        else camera2SurfaceAvgDistance += MIN_CAMERA_RADIUS;
+        if (hit) {
+            camera2SurfaceAvgDistance += hit[0];
+            samples++;
+        }
     }
     camera2SurfaceAvgDistance = (camera2SurfaceAvgDistance / samples);
     const radius = camera.position.length();
