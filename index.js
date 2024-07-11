@@ -131,7 +131,7 @@ function getMinCameraRadius() {
     let samples = 0;
     const w = window.width;
     const h = window.height;
-    const alpha = 1;
+    const alpha = 2;
     const rangeX = w / alpha;
     const rangeY = h / alpha;
     const centerX = w / 2;
