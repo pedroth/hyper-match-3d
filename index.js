@@ -9,7 +9,6 @@ import { arrayEquals, clamp, loop } from "./src/Utils.js";
 import { debugCache, rayTrace, traceWithCache } from "./src/RayTrace.js";
 import os from "node:os";
 import { Worker } from "node:worker_threads";
-import exp from "node:constants";
 
 //========================================================================================
 /*                                                                                      *
@@ -33,8 +32,8 @@ const MOUSE_WHEEL_FORCE = 0.05;
 //========================================================================================
 
 
-const width = 640/2;
-const height = 480/2;
+const width = 640 / 2;
+const height = 480 / 2;
 const window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
@@ -211,6 +210,7 @@ function renderGameFast(canvas) {
 }
 
 function switchSpheres() {
+    console.log(`Switch spheres: ${selectedObjects[0].props.id} <--> ${selectedObjects[1].props.id}`);
     const radius = selectedObjects[0].radius;
     const color = selectedObjects[0].props.color;
 
@@ -226,7 +226,10 @@ function findMatch(id) {
     const matchingVertices = [];
     const visitedVerticesSet = new Set().add(id);
     const graph = manifold.graph;
-    const baseColor = graph.getVertex(id).sphere.props.color;
+    console.log(`find match: ${id}`);
+    const vertex = graph.getVertex(id);
+    if(!vertex) return [];
+    const baseColor = vertex.sphere.props.color;
     vertexIdStack.push(...graph.getNeighbors(id));
     while (vertexIdStack.length > 0) {
         const i = vertexIdStack.pop();
@@ -246,6 +249,7 @@ function findMatch(id) {
     }
     if (matchingVertices.length < 2) return [];
     matchingVertices.push(id);
+    console.log(`>>>>>`);
     return matchingVertices;
 
 }
@@ -293,9 +297,9 @@ const params = process.argv.slice(2);
 const isParallel = !(params.length > 0 && params[0] === "-s")
 // Game loop
 const loopControl = loop(async (dt, time) => {
-    if (isParallel) await renderGameParallel(window);
+    if (isParallel) await renderGameParallel(exposedWindow);
     else {
-        renderGame(window);
+        renderGame(exposedWindow);
         // renderGameFast(window);
     }
     gameUpdate();

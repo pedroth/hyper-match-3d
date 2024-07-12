@@ -5,8 +5,8 @@ const clampAcos = clamp(-1, 1);
 
 export function rayTrace(ray, scene, options) {
     const { bounces, selectedObjects, backgroundImage, neighbors } = options;
-    if (bounces < 0) return colorFromSelectedObjects(ray.init, scene, selectedObjects);
-    // if (bounces < 0) return [0, 0, 0];
+    // if (bounces < 0) return colorFromSelectedObjects(ray.init, scene, selectedObjects);
+    if (bounces < 0) return [0, 0, 0];
     const hit = scene.interceptWithRay(ray);
     if (!hit) return renderBackground(ray, backgroundImage);
     const [, p, e] = hit;
@@ -54,7 +54,7 @@ export function colorFromSelectedObjects(p, scene, selectedObjects) {
     return [0, 0, 0];
 }
 
-const lightColorCache = (gridSpace, maxSamples = 5) => {
+const lightColorCache = (gridSpace, maxSamples = 50) => {
     const point2ColorMap = {};
     const ans = {};
     ans.hash = (p) => {
@@ -83,7 +83,7 @@ const lightColorCache = (gridSpace, maxSamples = 5) => {
         const cachedObj = point2ColorMap[h];
         if (!cachedObj) return undefined;
         const { color, samples } = cachedObj
-        return samples > maxSamples || Math.random() < samples / maxSamples ? color : undefined;
+        return Math.random() < 0.5 ? color : undefined;
     }
 
     ans.size = () => Object.values(point2ColorMap).length;
@@ -92,6 +92,7 @@ const lightColorCache = (gridSpace, maxSamples = 5) => {
 const cache = lightColorCache(0.01);
 export function traceWithCache(ray, scene, options) {
     const { bounces, selectedObjects, backgroundImage, neighbors } = options;
+    // if (bounces < 0) return colorFromSelectedObjects(ray.init, scene, selectedObjects);
     if (bounces < 0) return [0, 0, 0];
     const hit = scene.interceptWithRay(ray)
     if (!hit) return renderBackground(ray, backgroundImage);
