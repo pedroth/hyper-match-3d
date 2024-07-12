@@ -12,6 +12,13 @@ class Sphere {
 
     setPosition(pos) {
         this.position = pos;
+        // re-do bounding box
+        this.boundingBox = undefined;
+    }
+
+    setRadius(r) {
+        this.radius = r;
+        // re-do bounding box
         this.boundingBox = undefined;
     }
 

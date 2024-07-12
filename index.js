@@ -220,19 +220,14 @@ function renderGameFast(canvas) {
 }
 
 function switchSpheres() {
-    const [i, j] = selectedObjects.map(x => x.props.id);
-    selectedObjects.forEach(s => scene.removeElementWithName(s.props.name));
-    const p = selectedObjects[0].position;
-    const id = selectedObjects[0].props.id;
-    const name = selectedObjects[0].props.name;
-    selectedObjects[0].setPosition(selectedObjects[1].position);
-    selectedObjects[1].setPosition(p);
-    selectedObjects[0].props.id = selectedObjects[1].props.id;
-    selectedObjects[1].props.id = id;
-    selectedObjects[0].props.name = selectedObjects[1].props.name;
-    selectedObjects[1].props.name = name;
-    selectedObjects.forEach(s => scene.add(s));
-    manifold.graph.switchVertices(i, j);
+    const radius = selectedObjects[0].radius;
+    const color = selectedObjects[0].props.color;
+
+    selectedObjects[0].setRadius(selectedObjects[1].radius);
+    selectedObjects[1].setRadius(radius);
+
+    selectedObjects[0].props.color = selectedObjects[1].props.color;
+    selectedObjects[1].props.color = color;
 }
 
 function findMatch(id) {
@@ -246,6 +241,7 @@ function findMatch(id) {
         const i = vertexIdStack.pop();
         visitedVerticesSet.add(i);
         const v = graph.getVertex(i);
+        if (!v) continue;
         const color = v.sphere.props.color;
         if (arrayEquals(baseColor, color)) {
             matchingVertices.push(v.id);
@@ -265,9 +261,11 @@ function findMatch(id) {
 
 function removeSpheresWithId(id) {
     const graph = manifold.graph;
-    const sphere = graph.getVertex(id).sphere;
-    graph.removeVertex(id);
+    const v = graph.getVertex(id);
+    if (!v) return;
+    const sphere = v.sphere;
     scene.removeElementWithName(sphere.props.name);
+    graph.removeVertex(id);
 }
 
 function updateManifold() {
@@ -281,12 +279,13 @@ function updateManifold() {
 }
 
 function gameUpdate() {
+    const graph = manifold.graph;
     if (selectedObjects.length === 0) return;
     if (selectedObjects.length === 1) {
-        neighbors = manifold
-            .graph
+        neighbors = graph
             .getNeighbors(selectedObjects[0].props.id)
-            .map(id => manifold.graph.getVertex(id).sphere);
+            .filter(id => graph.getVertex(id))
+            .map(id => graph.getVertex(id).sphere);
     }
     if (selectedObjects.length === 2) {
         switchSpheres();

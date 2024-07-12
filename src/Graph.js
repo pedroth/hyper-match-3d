@@ -45,20 +45,8 @@ export default class Graph {
         return Object.keys(this.vertexNeigh[i] ?? {});
     }
 
-    switchVertices(i, j) {
-        if (!this.vertices[i]) return this;
-        if (!this.vertices[j]) return this;
-        const v = this.vertices[i];
-        this.vertices[i] = this.vertices[j];
-        this.vertices[i].id = j;
-        this.vertices[j] = v;
-        this.vertices[j].id = i;
-        return this;
-    }
-
     removeVertex(i) {
         if (!this.vertices[i]) return this;
-        console.log(`remove vertex ${i}`);
         this.getVertices().forEach(j => {
             if (j in this.vertexNeigh && i in this.vertexNeigh[j]) {
                 this.removeEdge(j, i);
@@ -74,7 +62,6 @@ export default class Graph {
     removeEdge(i, j) {
         const edgeKeyID = edgeKey(i, j);
         if (!this.edges[edgeKeyID]) return this;
-        console.log(`remove edge ${i} | ${j}`);
         delete this.edges[edgeKeyID];
         return this;
     }
