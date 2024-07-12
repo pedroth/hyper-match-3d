@@ -228,7 +228,7 @@ export default class Window {
     }
 
     setPxlData(index, [r, g, b]) {
-        this_image[index] = r;
+        this._image[index] = r;
         this._image[index + 1] = g;
         this._image[index + 2] = b;
         this._image[index + 3] = 1.0;

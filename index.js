@@ -5,20 +5,11 @@ import { Vec2, Vec3 } from "./src/Vector.js";
 import Window from "./src/Window.js";
 import Image from "./src/Image.js";
 import Manifold from "./src/Manifold.js";
-import { arrayEquals, loop } from "./src/Utils.js";
-import { rayTrace } from "./src/RayTrace.js";
+import { arrayEquals, clamp, loop } from "./src/Utils.js";
+import { debugCache, rayTrace, traceWithCache } from "./src/RayTrace.js";
 import os from "node:os";
 import { Worker } from "node:worker_threads";
-
-function clamp(min, max, x) {
-    if (x < min) {
-        return min;
-    } else if (x > max) {
-        return max;
-    } else {
-        return x;
-    }
-}
+import exp from "node:constants";
 
 //========================================================================================
 /*                                                                                      *
@@ -42,8 +33,8 @@ const MOUSE_WHEEL_FORCE = 0.05;
 //========================================================================================
 
 
-const width = 640 / 2;
-const height = 480 / 2;
+const width = 640/2;
+const height = 480/2;
 const window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
@@ -108,14 +99,14 @@ window.onMouseMove((x, y) => {
         )
     ));
     const minCameraRadius = getMinCameraRadius();
-    camera.orbit(orbitCoord => Vec3(clamp(minCameraRadius, MAX_CAMERA_RADIUS, orbitCoord.x), orbitCoord.y, orbitCoord.z));
+    camera.orbit(orbitCoord => Vec3(clamp(minCameraRadius, MAX_CAMERA_RADIUS)(orbitCoord.x), orbitCoord.y, orbitCoord.z));
     mouse = newMouse;
     exposedWindow = window.exposure();
 })
 window.onMouseWheel(({ dy }) => {
     const minCameraRadius = getMinCameraRadius();
     camera.orbit(orbitCoord => orbitCoord.add(Vec3(-dy * MOUSE_WHEEL_FORCE, 0, 0)));
-    camera.orbit(orbitCoord => Vec3(clamp(minCameraRadius, MAX_CAMERA_RADIUS, orbitCoord.x), orbitCoord.y, orbitCoord.z))
+    camera.orbit(orbitCoord => Vec3(clamp(minCameraRadius, MAX_CAMERA_RADIUS)(orbitCoord.x), orbitCoord.y, orbitCoord.z))
     exposedWindow = window.exposure();
 })
 
@@ -161,7 +152,7 @@ function getMinCameraRadius() {
 //========================================================================================
 
 function renderGame(canvas) {
-    const render = ray => rayTrace(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
+    const render = ray => traceWithCache(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
     return camera
         .rayMap(render)
         .to(canvas);
@@ -302,13 +293,12 @@ const params = process.argv.slice(2);
 const isParallel = !(params.length > 0 && params[0] === "-s")
 // Game loop
 const loopControl = loop(async (dt, time) => {
-    if (isParallel) await renderGameParallel(exposedWindow);
+    if (isParallel) await renderGameParallel(window);
     else {
-        // renderGame(exposedWindow);
-        renderGameFast(window);
+        renderGame(window);
+        // renderGameFast(window);
     }
     gameUpdate();
-    // simulate(dt);
     window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
 })
 

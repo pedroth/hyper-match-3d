@@ -5,8 +5,8 @@ const clampAcos = clamp(-1, 1);
 
 export function rayTrace(ray, scene, options) {
     const { bounces, selectedObjects, backgroundImage, neighbors } = options;
-    // if (bounces < 0) return colorFromSelectedObjects(ray.init, scene, selectedObjects);
-    if (bounces < 0) return [0, 0, 0];
+    if (bounces < 0) return colorFromSelectedObjects(ray.init, scene, selectedObjects);
+    // if (bounces < 0) return [0, 0, 0];
     const hit = scene.interceptWithRay(ray);
     if (!hit) return renderBackground(ray, backgroundImage);
     const [, p, e] = hit;
@@ -22,7 +22,7 @@ export function rayTrace(ray, scene, options) {
     const finalC = rayTrace(
         r,
         scene,
-        { bounces: bounces - 1, selectedObjects, backgroundImage , neighbors}
+        { bounces: bounces - 1, selectedObjects, backgroundImage, neighbors }
     );
     return [
         finalC[0] + finalC[0] * color[0],
@@ -52,4 +52,102 @@ export function colorFromSelectedObjects(p, scene, selectedObjects) {
         }
     }
     return [0, 0, 0];
+}
+
+const lightColorCache = (gridSpace, maxSamples = 5) => {
+    const point2ColorMap = {};
+    const ans = {};
+    ans.hash = (p) => {
+        const integerCoord = p.map(z => Math.floor(z / gridSpace));
+        const h = (integerCoord.x * 92837111) ^ (integerCoord.y * 689287499) ^ (integerCoord.z * 283923481);
+        return Math.abs(h);
+    }
+    ans.set = (p, c) => {
+        const h = ans.hash(p);
+        if (h in point2ColorMap) {
+            const { color, samples } = point2ColorMap[h]
+            const newColor = [
+                color[0] + (c[0] - color[0]) / samples,
+                color[1] + (c[1] - color[1]) / samples,
+                color[2] + (c[2] - color[2]) / samples,
+            ]
+            const newSamples = samples < maxSamples ? samples + 1 : samples;
+            point2ColorMap[h] = { color: newColor, samples: newSamples };
+        } else {
+            point2ColorMap[h] = { color: c, samples: 1 };
+        }
+        return ans;
+    }
+    ans.get = p => {
+        const h = ans.hash(p);
+        const cachedObj = point2ColorMap[h];
+        if (!cachedObj) return undefined;
+        const { color, samples } = cachedObj
+        return samples > maxSamples || Math.random() < samples / maxSamples ? color : undefined;
+    }
+
+    ans.size = () => Object.values(point2ColorMap).length;
+    return ans;
+}
+const cache = lightColorCache(0.01);
+export function traceWithCache(ray, scene, options) {
+    const { bounces, selectedObjects, backgroundImage, neighbors } = options;
+    if (bounces < 0) return [0, 0, 0];
+    const hit = scene.interceptWithRay(ray)
+    if (!hit) return renderBackground(ray, backgroundImage);
+    const [, p, e] = hit;
+    let color = e.props?.color ?? [0, 0, 0];
+    if (
+        selectedObjects.some(s => s.props.name === e.props.name) ||
+        neighbors.some(s => s.props.name === e.props.name)
+    ) {
+        return color
+    };
+    const cachedColor = cache.get(p);
+    if (cachedColor) return cachedColor;
+    const mat = e.props?.material ?? Diffuse();
+    const r = mat.scatter(ray, p, e);
+    const finalC = traceWithCache(
+        r,
+        scene,
+        { bounces: bounces - 1, selectedObjects, backgroundImage, neighbors }
+    );
+    const finalColor = [
+        finalC[0] + finalC[0] * color[0],
+        finalC[1] + finalC[1] * color[1],
+        finalC[2] + finalC[2] * color[2],
+    ];
+    cache.set(p, finalColor);
+    return finalColor;
+}
+
+export function debugCache(ray, scene, options) {
+    const { bounces, selectedObjects, backgroundImage, neighbors } = options;
+    if (bounces < 0) return [0, 0, 0];
+    const hit = scene.interceptWithRay(ray)
+    if (!hit) return [0, 0, 0]
+    const [, p, e] = hit;
+    let color = e.props?.color ?? [0, 0, 0];
+    if (
+        selectedObjects.some(s => s.props.name === e.props.name) ||
+        neighbors.some(s => s.props.name === e.props.name)
+    ) {
+        return color
+    };
+    const cachedColor = cache.get(p);
+    if (cachedColor) return [0, 1, 0];
+    const mat = e.props?.material ?? Diffuse();
+    const r = mat.scatter(ray, p, e);
+    const finalC = traceWithCache(
+        r,
+        scene,
+        { bounces: bounces - 1, selectedObjects, backgroundImage, neighbors }
+    );
+    const finalColor = [
+        finalC[0] + finalC[0] * color[0],
+        finalC[1] + finalC[1] * color[1],
+        finalC[2] + finalC[2] * color[2],
+    ];
+    cache.set(p, finalColor);
+    return [0, 0, 1];
 }
