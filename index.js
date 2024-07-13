@@ -170,9 +170,13 @@ function renderGameParallel(canvas) {
                     worker.removeAllListeners('message');
                     worker.on("message", message => {
                         const { image, startRow, endRow, } = message;
+                        let index = 0;
                         const startIndex = 4 * w * startRow;
                         const endIndex = 4 * w * endRow;
-                        canvas.setPxlDataRange(startIndex, image.slice(0, endIndex - startIndex + 1))
+                        for (let i = startIndex; i < endIndex; i += 4) {
+                            canvas.setPxlData(i, [image[index++], image[index++], image[index++]]);
+                            index++;
+                        }
                         resolve();
                     });
                     const ratio = Math.floor(h / WORKERS.length);
@@ -222,7 +226,7 @@ function findMatch(id) {
     const visitedVerticesSet = new Set().add(id);
     const graph = manifold.graph;
     const vertex = graph.getVertex(id);
-    if (!vertex) return [];
+    if(!vertex) return [];
     const baseColor = vertex.sphere.props.color;
     vertexIdStack.push(...graph.getNeighbors(id));
     while (vertexIdStack.length > 0) {
