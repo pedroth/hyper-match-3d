@@ -1,23 +1,4 @@
-import Vec from "./Vector.js";
-
-export function measureTime(lambda) {
-    const t = performance.now();
-    lambda()
-    return 1e-3 * (performance.now() - t);
-}
-
-export function logTime(lambda) {
-    const t = performance.now();
-    const result = lambda();
-    console.log(`Took ${1e-3 * (performance.now() - t)}s`);
-    return result;
-}
-
-export function measureTimeWithResult(lambda) {
-    const t = performance.now();
-    const result = lambda();
-    return { result, time: 1e-3 * (performance.now() - t) };
-}
+import Vec, { Vec2, Vec3 } from "./Vector.js";
 
 export function groupBy(array, groupFunction) {
     const ans = {};
@@ -57,7 +38,9 @@ export function memoize(func) {
 export function randomPointInSphere(dim) {
     let randomInSphere;
     while (true) {
-        const random = Vec.RANDOM(dim).map(x => 2 * x - 1);
+        const random = dim === 2 ?
+            Vec2(2 * Math.random() - 1, 2 * Math.random() - 1) :
+            Vec3(2 * Math.random() - 1, 2 * Math.random() - 1, 2 * Math.random() - 1);
         if (random.squareLength() >= 1) continue;
         randomInSphere = random.normalize();
         break;
@@ -70,15 +53,10 @@ export function mod(n, m) {
 }
 
 export function clamp(min = 0, max = 1) {
-    // return x => Math.max(min, Math.min(max, x));
     return x => {
-        if (x < min) {
-            return min;
-        } else if (x > max) {
-            return max;
-        } else {
-            return x;
-        }
+        if (x < min) return min;
+        if (x > max) return max;
+        return x;
     }
 }
 

@@ -28,8 +28,8 @@ let selectedObjects = [];
 //========================================================================================
 
 
-const width = 640 / 2;
-const height = 480 / 2;
+const width = 640;
+const height = 480;
 const window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
@@ -260,11 +260,10 @@ function removeSpheresWithId(id) {
 function updateManifold() {
     const ids = selectedObjects.map(x => x.props.id);
     ids.forEach(id => {
-        const matches = findMatch(id);
-        for (let i = 0; i < matches.length; i++) {
-            const sphereIds = matches[i];
-            removeSpheresWithId(sphereIds)
-        }
+        findMatch(id)
+            .forEach(sphereIds => {
+                removeSpheresWithId(sphereIds)
+            });
     })
 }
 

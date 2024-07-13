@@ -2,8 +2,8 @@ import Graph from "./Graph.js";
 import { Diffuse } from "./Material.js";
 import Scene from "./Scene.js";
 import Sphere from "./Sphere.js";
-import { groupBy, measureTime } from "./Utils.js";
-import Vec, { Vec3 } from "./Vector.js";
+import { groupBy } from "./Utils.js";
+import { Vec3 } from "./Vector.js";
 
 
 //========================================================================================
