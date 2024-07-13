@@ -223,19 +223,19 @@ class Vector3 {
   }
 
   add(u) {
-    return this.op(u, (a, b) => a + b);
+    return Vec3(this.x + u.x, this.y + u.y, this.z + u.z);
   }
 
   sub(u) {
-    return this.op(u, (a, b) => a - b);
+    return Vec3(this.x - u.x, this.y - u.y, this.z - u.z);
   }
 
   mul(u) {
-    return this.op(u, (a, b) => a * b);
+    return Vec3(this.x * u.x, this.y * u.y, this.z * u.z);
   }
 
   div(u) {
-    return this.op(u, (a, b) => a / b);
+    return Vec3(this.x / u.x, this.y / u.y, this.z / u.z);
   }
 
   dot(u) {
@@ -255,7 +255,7 @@ class Vector3 {
   }
 
   scale(r) {
-    return this.map((z) => z * r);
+    return Vec3(this.x * r, this.y * r, this.z * r);
   }
 
   map(lambda) {
@@ -373,19 +373,19 @@ class Vector2 {
   }
 
   add(u) {
-    return this.op(u, (a, b) => a + b);
+    return Vec2(this.x + u.x, this.y + u.y);
   }
 
   sub(u) {
-    return this.op(u, (a, b) => a - b);
+    return Vec2(this.x - u.x, this.y - u.y);
   }
 
   mul(u) {
-    return this.op(u, (a, b) => a * b);
+    return Vec2(this.x * u.x, this.y * u.y);
   }
 
   div(u) {
-    return this.op(u, (a, b) => a / b);
+    return Vec2(this.x / u.x, this.y / u.y);
   }
 
   dot(u) {
@@ -405,7 +405,7 @@ class Vector2 {
   }
 
   scale(r) {
-    return this.map((z) => z * r);
+    return Vec2(this.x * r, this.y * r);
   }
 
   map(lambda) {
