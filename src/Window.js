@@ -15,7 +15,7 @@ export default class Window {
         this._height = height;
         this._title = title;
         this._window = sdl.video.createWindow({ title, resizable: true });
-        this._image = new Float32Array(this._width * this._height * 4);
+        this._image = Buffer.allocUnsafe(this._width * this._height * 4);
         this.box = new Box(Vec2(0, 0), Vec2(this._width, this._height));
         this._eventHandlers = {};
     }
@@ -66,9 +66,9 @@ export default class Window {
     }
 
     paint() {
-        const buffer = Buffer.allocUnsafe(this._image.length);
-        buffer.set(this._image.map(x => clamp01(x) * MAX_8BIT));
-        this._window.render(this._width, this._height, this._width * 4, 'rgba32', buffer);
+        // const buffer = Buffer.allocUnsafe(this._image.length);
+        // buffer.set(this._image.map(x => clamp01(x) * MAX_8BIT));
+        this._window.render(this._width, this._height, this._width * 4, 'rgba32', this._image);
         return this;
     }
 
@@ -86,10 +86,10 @@ export default class Window {
             const y = h - 1 - i;
             const color = lambda(x, y);
             if (!color) return;
-            this._image[k] = color[0];
-            this._image[k + 1] = color[1];
-            this._image[k + 2] = color[2];
-            this._image[k + 3] = 1;
+            this._image[k] = color[0] * MAX_8BIT;
+            this._image[k + 1] = color[1] * MAX_8BIT;
+            this._image[k + 2] = color[2] * MAX_8BIT;
+            this._image[k + 3] = MAX_8BIT;
         }
         return paint && this.paint();
     }
@@ -220,18 +220,18 @@ export default class Window {
         const w = this._width;
         const [i, j] = this.canvas2grid(x, y);
         const index = 4 * (w * i + j);
-        this._image[index] = color[0];
-        this._image[index + 1] = color[1];
-        this._image[index + 2] = color[2];
-        this._image[index + 3] = 1;
+        this._image[index] = color[0] * MAX_8BIT;
+        this._image[index + 1] = color[1] * MAX_8BIT;
+        this._image[index + 2] = color[2] * MAX_8BIT;
+        this._image[index + 3] = MAX_8BIT;
         return this;
     }
 
     setPxlData(index, [r, g, b]) {
-        this._image[index] = r;
-        this._image[index + 1] = g;
-        this._image[index + 2] = b;
-        this._image[index + 3] = 1.0;
+        this._image[index] = r * MAX_8BIT;
+        this._image[index + 1] = g * MAX_8BIT;
+        this._image[index + 2] = b * MAX_8BIT;
+        this._image[index + 3] = MAX_8BIT;
         return this;
     }
 
@@ -303,19 +303,24 @@ export default class Window {
                 const y = h - 1 - i;
                 const color = lambda(x, y);
                 if (!color) return;
-                this._image[k] = this._image[k] + (color[0] - this._image[k]) / it;
-                this._image[k + 1] = this._image[k + 1] + (color[1] - this._image[k + 1]) / it;
-                this._image[k + 2] = this._image[k + 2] + (color[2] - this._image[k + 2]) / it;
-                this._image[k + 3] = 1.0;
+                this._image[k] = this._image[k] + (color[0] * MAX_8BIT - this._image[k]) / it;
+                this._image[k + 1] = this._image[k + 1] + (color[1] * MAX_8BIT - this._image[k + 1]) / it;
+                this._image[k + 2] = this._image[k + 2] + (color[2] * MAX_8BIT - this._image[k + 2]) / it;
+                this._image[k + 3] = MAX_8BIT;
             }
             return ans.paint();
         }
 
         ans.setPxlData = (index, [r, g, b]) => {
-            this._image[index] = this._image[index] + (r - this._image[index]) / it;
-            this._image[index + 1] = this._image[index + 1] + (g - this._image[index + 1]) / it;
-            this._image[index + 2] = this._image[index + 2] + (b - this._image[index + 2]) / it;
-            this._image[index + 3] = 1.0;
+            this._image[index] = this._image[index] + (r * MAX_8BIT - this._image[index]) / it;
+            this._image[index + 1] = this._image[index + 1] + (g * MAX_8BIT - this._image[index + 1]) / it;
+            this._image[index + 2] = this._image[index + 2] + (b * MAX_8BIT - this._image[index + 2]) / it;
+            this._image[index + 3] = MAX_8BIT;
+            return ans;
+        }
+
+        ans.setPxlDataRange = (startIndex, data) => {
+            this._image.set(data, startIndex);
             return ans;
         }
 

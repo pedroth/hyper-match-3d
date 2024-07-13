@@ -1,11 +1,12 @@
 import Camera from "./Camera.js";
+import { MAX_8BIT } from "./Constants.js";
 import Image from "./Image.js";
 import { debugCache, rayTrace, traceWithCache } from "./RayTrace.js";
 import Scene from "./Scene.js"
 import Sphere from "./Sphere.js";
 import { parentPort } from "node:worker_threads";
 
-let scene; 
+let scene;
 let backgroundImage;
 
 function main(inputs) {
@@ -42,10 +43,10 @@ function main(inputs) {
             const ray = rayGen(x, height - 1 - y)
             const [red, green, blue] = traceWithCache(ray, scene, { bounces, backgroundImage, selectedObjects, neighbors});
             // const [red, green, blue] = rayTrace(ray, scene, { bounces, backgroundImage, selectedObjects, neighbors});
-            image[index++] = red;
-            image[index++] = green;
-            image[index++] = blue;
-            image[index++] = 1.0;
+            image[index++] = red * MAX_8BIT;
+            image[index++] = green * MAX_8BIT;
+            image[index++] = blue * MAX_8BIT;
+            image[index++] = MAX_8BIT;
         }
     }
     return { image, startRow, endRow };

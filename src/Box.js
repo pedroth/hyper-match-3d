@@ -48,10 +48,16 @@ export default class Box {
             let t1 = (minArray[i] - rInit[i]) * dirInv[i];
             let t2 = (maxArray[i] - rInit[i]) * dirInv[i];
 
-            tmin = Math.max(tmin, Math.min(t1, t2));
-            tmax = Math.min(tmax, Math.max(t1, t2));
+            if (t1 < t2) {
+                tmin = tmin > t1 ? tmin : t1;
+                tmax = tmax < t2 ? tmax : t2;
+            } else {
+                tmin = tmin > t2 ? tmin : t2;
+                tmax = tmax < t1 ? tmax : t1;
+            }
         }
-        return tmax >= Math.max(tmin, 0) ? [tmin - epsilon, ray.trace(tmin - epsilon), this] : undefined;
+        let threshold = tmin > 0 ? tmin : 0;
+        return tmax >= threshold ? [tmin - epsilon, ray.trace(tmin - epsilon), this] : undefined;
     }
 
     interceptWithLine(a, b) {
