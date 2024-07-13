@@ -54,7 +54,7 @@ export function colorFromSelectedObjects(p, scene, selectedObjects) {
     return [0, 0, 0];
 }
 
-const lightColorCache = (gridSpace, maxSamples = 50) => {
+const colorCache = (gridSpace, maxSamples = 50) => {
     const point2ColorMap = {};
     const ans = {};
     ans.hash = (p) => {
@@ -86,10 +86,9 @@ const lightColorCache = (gridSpace, maxSamples = 50) => {
         return Math.random() < 0.5 ? color : undefined;
     }
 
-    ans.size = () => Object.values(point2ColorMap).length;
     return ans;
 }
-const cache = lightColorCache(0.01);
+const cache = colorCache(0.01);
 export function traceWithCache(ray, scene, options) {
     const { bounces, selectedObjects, backgroundImage, neighbors } = options;
     // if (bounces < 0) return colorFromSelectedObjects(ray.init, scene, selectedObjects);

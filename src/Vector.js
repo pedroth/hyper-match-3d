@@ -1,3 +1,32 @@
+function Vector3Cache(spatialGridSpacing = 1e-3, maxSize = 1e3) {
+  const coord2VecMap = {};
+  let size = 0;
+  const gridInverse = 1 / spatialGridSpacing;
+  const ans = {};
+  ans.hash = (x, y, z) => {
+    const integerSpatialCoord = [x, y, z].map(u => Math.floor(u * gridInverse));
+    const h = (integerSpatialCoord[0] * 92837111) ^ (integerSpatialCoord[1] * 689287499) ^ (integerSpatialCoord[2] * 283923481);
+    return Math.abs(h);
+  }
+  ans.set = (vec) => {
+    if (size > maxSize) return ans;
+    const h = ans.hash(vec.x, vec.y, vec.z);
+    if (!(h in coord2VecMap)) {
+      coord2VecMap[h] = vec;
+      size++;
+    }
+    return ans;
+  }
+  ans.get = (x, y, z) => {
+    const h = ans.hash(x, y, z);
+    return coord2VecMap[h];
+  }
+
+  return ans;
+}
+
+const vec3Cache = Vector3Cache();
+
 //========================================================================================
 /*                                                                                      *
  *                                        VECTOR                                        *
@@ -185,10 +214,12 @@ export const Vec2 = (x = 0, y = 0) => new Vector2(x, y);
 
 class Vector3 {
   constructor(x = 0, y = 0, z = 0) {
+    // const cachedVec = vec3Cache.get(x, y, z);
+    // if (cachedVec) return cachedVec;
     this.x = x;
     this.y = y;
     this.z = z;
-
+    // vec3Cache.set(this);
   }
 
   get n() {

@@ -32,8 +32,8 @@ const MOUSE_WHEEL_FORCE = 0.05;
 //========================================================================================
 
 
-const width = 640 / 2;
-const height = 480 / 2;
+const width = 640;
+const height = 480;
 const window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
@@ -210,7 +210,6 @@ function renderGameFast(canvas) {
 }
 
 function switchSpheres() {
-    console.log(`Switch spheres: ${selectedObjects[0].props.id} <--> ${selectedObjects[1].props.id}`);
     const radius = selectedObjects[0].radius;
     const color = selectedObjects[0].props.color;
 
@@ -226,7 +225,6 @@ function findMatch(id) {
     const matchingVertices = [];
     const visitedVerticesSet = new Set().add(id);
     const graph = manifold.graph;
-    console.log(`find match: ${id}`);
     const vertex = graph.getVertex(id);
     if(!vertex) return [];
     const baseColor = vertex.sphere.props.color;
@@ -249,7 +247,6 @@ function findMatch(id) {
     }
     if (matchingVertices.length < 2) return [];
     matchingVertices.push(id);
-    console.log(`>>>>>`);
     return matchingVertices;
 
 }
