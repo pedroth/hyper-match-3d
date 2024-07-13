@@ -1,11 +1,8 @@
 import Box from "./Box.js";
 import PQueue from "./PQueue.js";
-import { rayCache } from "./Ray.js";
 import Sphere from "./Sphere.js";
 import { argmin } from "./Utils.js";
 import Vec, { Vec3 } from "./Vector.js";
-
-const sceneRayCache = rayCache();
 
 export default class Scene {
   constructor(k = 10) {
@@ -73,12 +70,7 @@ export default class Scene {
   }
 
   interceptWithRay(ray) {
-    const cachedHit = sceneRayCache.get(ray);
-    if(cachedHit) return cachedHit;
-    const hit = this.boundingBoxScene.interceptWithRay(ray);
-    sceneRayCache.set(ray, hit);
-    return hit;
-    // return this.boundingBoxScene.interceptWithRay(ray);
+    return this.boundingBoxScene.interceptWithRay(ray);
   }
 
   distanceOnRay(ray) {
