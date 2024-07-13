@@ -1,29 +1,25 @@
-import { readFileSync } from "node:fs";
-import Camera from "./src/Camera.js";
-import Scene from "./src/Scene.js";
-import { Vec2, Vec3 } from "./src/Vector.js";
-import Window from "./src/Window.js";
-import Image from "./src/Image.js";
-import Manifold from "./src/Manifold.js";
-import { arrayEquals, clamp, loop } from "./src/Utils.js";
-import { debugCache, rayTrace, traceWithCache } from "./src/RayTrace.js";
 import os from "node:os";
+import Scene from "./src/Scene.js";
+import Image from "./src/Image.js";
+import Camera from "./src/Camera.js";
+import Window from "./src/Window.js";
+import { readFileSync } from "node:fs";
+import Manifold from "./src/Manifold.js";
+import { Vec2, Vec3 } from "./src/Vector.js";
 import { Worker } from "node:worker_threads";
+import { traceWithCache } from "./src/RayTrace.js";
+import { arrayEquals, clamp, loop } from "./src/Utils.js";
+import { GOLDEN_RATIO, MAX_CAMERA_RADIUS, MOUSE_WHEEL_FORCE } from "./src/Constants.js";
 
 //========================================================================================
 /*                                                                                      *
- *                                      GAME SETUP                                      *
+ *                                      GAME VARS                                       *
  *                                                                                      */
 //========================================================================================
 
-let selectedObjects = [];
-let selectedIndex = 0;
 let neighbors = [];
-
-const MIN_CAMERA_RADIUS = 0.5;
-const MAX_CAMERA_RADIUS = 2;
-const GOLDEN_RATIO = 1.618033988749;
-const MOUSE_WHEEL_FORCE = 0.05;
+let selectedIndex = 0;
+let selectedObjects = [];
 
 //========================================================================================
 /*                                                                                      *
@@ -32,8 +28,8 @@ const MOUSE_WHEEL_FORCE = 0.05;
 //========================================================================================
 
 
-const width = 640;
-const height = 480;
+const width = 640 / 2;
+const height = 480 / 2;
 const window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
@@ -59,8 +55,10 @@ window.onMouseDown((x, y, e) => {
     if (rightClick) return;
     const hit = scene.interceptWithRay(canvas2ray(x, y))
     if (hit) {
+        exposedWindow = window.exposure();
         if (selectedIndex === 0) {
             selectedObjects[selectedIndex++] = hit[2];
+            return;
         }
         if (selectedIndex === 1) {
             const hitId = hit[2].props.id;
@@ -70,7 +68,6 @@ window.onMouseDown((x, y, e) => {
                 neighbors = [];
                 selectedIndex = 0;
                 selectedObjects = [];
-                selectedObjects[selectedIndex++] = hit[2];
             }
         }
     } else {
@@ -78,7 +75,6 @@ window.onMouseDown((x, y, e) => {
         selectedIndex = 0;
         selectedObjects = [];
     }
-    exposedWindow = window.exposure();
 })
 window.onMouseUp(() => {
     rightClick = false;
@@ -151,7 +147,8 @@ function getMinCameraRadius() {
 //========================================================================================
 
 function renderGame(canvas) {
-    const render = ray => traceWithCache(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
+    const render = ray =>
+        traceWithCache(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
     return camera
         .rayMap(render)
         .to(canvas);
@@ -226,7 +223,7 @@ function findMatch(id) {
     const visitedVerticesSet = new Set().add(id);
     const graph = manifold.graph;
     const vertex = graph.getVertex(id);
-    if(!vertex) return [];
+    if (!vertex) return [];
     const baseColor = vertex.sphere.props.color;
     vertexIdStack.push(...graph.getNeighbors(id));
     while (vertexIdStack.length > 0) {
@@ -263,10 +260,11 @@ function removeSpheresWithId(id) {
 function updateManifold() {
     const ids = selectedObjects.map(x => x.props.id);
     ids.forEach(id => {
-        findMatch(id)
-            .forEach(sphereIds => {
-                removeSpheresWithId(sphereIds)
-            });
+        const matches = findMatch(id);
+        for (let i = 0; i < matches.length; i++) {
+            const sphereIds = matches[i];
+            removeSpheresWithId(sphereIds)
+        }
     })
 }
 
