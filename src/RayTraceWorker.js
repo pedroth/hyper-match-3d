@@ -4,8 +4,9 @@ import { debugCache, rayTrace, traceWithCache } from "./RayTrace.js";
 import Scene from "./Scene.js"
 import Sphere from "./Sphere.js";
 import { parentPort } from "node:worker_threads";
+import { fRandom } from "./Utils.js";
 
-let scene; 
+let scene;
 let backgroundImage;
 
 function main(inputs) {
@@ -18,7 +19,7 @@ function main(inputs) {
         isFirstTime,
         camera: serializedCamera,
         selectedObjects: serializedSelectedObjects,
-        neighbors: serializedNeighbors
+        neighbors: serializedNeighbors,
     } = inputs;
     if (isFirstTime) {
         const {
@@ -40,12 +41,19 @@ function main(inputs) {
     for (let y = startRow; y < endRow; y++) {
         for (let x = 0; x < width; x++) {
             const ray = rayGen(x, height - 1 - y)
-            const [red, green, blue] = traceWithCache(ray, scene, { bounces, backgroundImage, selectedObjects, neighbors});
-            // const [red, green, blue] = rayTrace(ray, scene, { bounces, backgroundImage, selectedObjects, neighbors});
-            image[index++] = red;
-            image[index++] = green;
-            image[index++] = blue;
-            image[index++] = 1.0;
+            if (Math.random() < 0.6)  {
+                image[index++] = fRandom();
+                image[index++] = fRandom();
+                image[index++] = fRandom();
+                image[index++] = 1.0;
+            } else {
+                const [red, green, blue] = traceWithCache(ray, scene, { bounces, backgroundImage, selectedObjects, neighbors });
+                // const [red, green, blue] = rayTrace(ray, scene, { bounces, backgroundImage, selectedObjects, neighbors});
+                image[index++] = red;
+                image[index++] = green;
+                image[index++] = blue;
+                image[index++] = 1.0;
+            }
         }
     }
     return { image, startRow, endRow };

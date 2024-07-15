@@ -60,7 +60,7 @@ export function clamp(min = 0, max = 1) {
     }
 }
 
-const RANDOM = Array(1000).fill().map(Math.random);
+const RANDOM = Array(1e6).fill().map(Math.random);
 let i = 0;
 export function fRandom() {
     if (i > 1e6) i = 0;
