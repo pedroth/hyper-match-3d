@@ -10,6 +10,7 @@ import { Worker } from "node:worker_threads";
 import { traceWithCache } from "./src/RayTrace.js";
 import { arrayEquals, clamp, loop } from "./src/Utils.js";
 import { GOLDEN_RATIO, MAX_CAMERA_RADIUS, MOUSE_WHEEL_FORCE } from "./src/Constants.js";
+import { playSound, playSoundLoop } from "./src/Music.js";
 
 //========================================================================================
 /*                                                                                      *
@@ -39,6 +40,7 @@ const meshObj = readFileSync("./assets/simple_bunny.obj", { encoding: "utf-8" })
 const manifold = Manifold.readObj(meshObj, "manifold")
 scene.addList(manifold.asSpheres());
 
+const musicLoopHandler = playSoundLoop("./assets/music_sdl.wav");
 
 //========================================================================================
 /*                                                                                      *

@@ -1,4 +1,4 @@
-import Vec, { Vec2, Vec3 } from "./Vector.js";
+import { Vec2, Vec3 } from "./Vector.js";
 
 export function groupBy(array, groupFunction) {
     const ans = {};
