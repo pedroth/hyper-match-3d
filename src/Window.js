@@ -91,7 +91,8 @@ export default class Window {
             this._image[k + 2] = color[2];
             this._image[k + 3] = 1;
         }
-        return paint && this.paint();
+        if (paint) return this.paint();
+        return this;
     }
 
     mapBox = (lambda, box, paint = true) => {
@@ -106,7 +107,8 @@ export default class Window {
                 this.setPxl(x, y, color);
             }
         }
-        return paint && this.paint();
+        if (paint) return this.paint();
+        return this;
     }
 
     mapParallel = memoize((lambda, dependencies = []) => {
@@ -323,7 +325,8 @@ export default class Window {
                 this._image[k + 2] = this._image[k + 2] + (color[2] - this._image[k + 2]) / it;
                 this._image[k + 3] = 1.0;
             }
-            return paint && ans.paint();
+            if (paint) return ans.paint();
+            return ans;
         }
 
         ans.setPxlData = (index, [r, g, b]) => {

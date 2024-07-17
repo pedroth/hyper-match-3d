@@ -297,7 +297,7 @@ const textBox = new Box(Vec2(width / 10, height / 3), Vec2(9 / 10 * width, 2 / 3
 function renderStartScreen() {
     const render = ray => renderBackground(ray, backgroundImage);
     window = camera
-        .rayMap(render)
+        .rayMap(render, false)
         .to(window);
     window.mapBox(
         (x, y) => {

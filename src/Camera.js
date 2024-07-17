@@ -85,7 +85,7 @@ export default class Camera {
     return this;
   }
 
-  rayMap(lambdaWithRays) {
+  rayMap(lambdaWithRays, paint=true) {
     return {
       to: canvas => {
         const w = canvas.width;
@@ -104,7 +104,7 @@ export default class Camera {
             .normalize()
           const c = lambdaWithRays(Ray(this.position, dir));
           return c;
-        });
+        }, paint);
         return ans;
       }
     }
