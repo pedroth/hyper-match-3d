@@ -82,11 +82,6 @@ export function debounce(lambda, debounceTimeInMillis = 500) {
 
 export function loop(lambda) {
     let isFinished = false;
-    const loopControl = {
-        stop: () => {
-            isFinished = true;
-        }
-    };
     const play = async ({ time, oldT }) => {
         const newT = new Date().getTime();
         const dt = (newT - oldT) * 1e-3;
@@ -99,7 +94,13 @@ export function loop(lambda) {
             time: time + dt,
         }));
     }
-    play({ oldT: new Date().getTime(), time: 0 });
+    const loopControl = {
+        stop: () => {
+            isFinished = true;
+        },
+        play: () => play({ oldT: new Date().getTime(), time: 0 })
+    };
+
     return loopControl;
 }
 

@@ -85,11 +85,26 @@ export default class Window {
             const x = j;
             const y = h - 1 - i;
             const color = lambda(x, y);
-            if (!color) return;
+            if (!color) continue;
             this._image[k] = color[0];
             this._image[k + 1] = color[1];
             this._image[k + 2] = color[2];
             this._image[k + 3] = 1;
+        }
+        return paint && this.paint();
+    }
+
+    mapBox = (lambda, box, paint = true) => {
+        const init = box.min;
+        const end = box.max;
+        const w = box.diagonal.x;
+        const h = box.diagonal.y;
+        for (let x = init.x; x < end.x; x++) {
+            for (let y = init.y; y < end.y; y++) {
+                const color = lambda(x - init.x, y - init.y);
+                if (!color) continue;
+                this.setPxl(x, y, color);
+            }
         }
         return paint && this.paint();
     }
@@ -109,7 +124,7 @@ export default class Window {
                 const x = j;
                 const y = _height_ - 1 - i;
                 const color = lambda(x, y, { ..._vars_ });
-                if (!color) return;
+                if (!color) continue;
                 const [red, green, blue] = color;
                 image[index] = red;
                 image[index + 1] = green;
@@ -292,7 +307,7 @@ export default class Window {
         }
         ans.width = this.width;
         ans.height = this.height;
-        ans.map = (lambda) => {
+        ans.map = (lambda, paint = true) => {
             const n = this._image.length;
             const w = this._width;
             const h = this._height;
@@ -302,13 +317,13 @@ export default class Window {
                 const x = j;
                 const y = h - 1 - i;
                 const color = lambda(x, y);
-                if (!color) return;
+                if (!color) continue;
                 this._image[k] = this._image[k] + (color[0] - this._image[k]) / it;
                 this._image[k + 1] = this._image[k + 1] + (color[1] - this._image[k + 1]) / it;
                 this._image[k + 2] = this._image[k + 2] + (color[2] - this._image[k + 2]) / it;
                 this._image[k + 3] = 1.0;
             }
-            return ans.paint();
+            return paint && ans.paint();
         }
 
         ans.setPxlData = (index, [r, g, b]) => {

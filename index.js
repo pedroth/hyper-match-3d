@@ -7,10 +7,12 @@ import { readFileSync } from "node:fs";
 import Manifold from "./src/Manifold.js";
 import { Vec2, Vec3 } from "./src/Vector.js";
 import { Worker } from "node:worker_threads";
-import { traceWithCache } from "./src/RayTrace.js";
+import { renderBackground, traceWithCache } from "./src/RayTrace.js";
 import { arrayEquals, clamp, loop } from "./src/Utils.js";
 import { GOLDEN_RATIO, MAX_CAMERA_RADIUS, MOUSE_WHEEL_FORCE } from "./src/Constants.js";
 import { playSound, playSoundLoop } from "./src/Music.js";
+import { imageFromString } from "./src/Fonts.js";
+import Box from "./src/Box.js";
 
 //========================================================================================
 /*                                                                                      *
@@ -31,7 +33,7 @@ let selectedObjects = [];
 
 const width = 640;
 const height = 480;
-const window = Window.ofSize(width, height);
+let window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
 const scene = new Scene();
@@ -142,11 +144,13 @@ function getMinCameraRadius() {
     return GOLDEN_RATIO * distance2Surface;
 }
 
+
 //========================================================================================
 /*                                                                                      *
- *                                       GAME LOOP                                      *
+ *                                    GAMEPLAY LOGIC                                    *
  *                                                                                      */
 //========================================================================================
+
 
 function renderGame(canvas) {
     const render = ray =>
@@ -247,7 +251,6 @@ function findMatch(id) {
     if (matchingVertices.length < 2) return [];
     matchingVertices.push(id);
     return matchingVertices;
-
 }
 
 function removeSpheresWithId(id) {
@@ -289,18 +292,63 @@ function gameUpdate() {
     }
 }
 
+const helloImg = imageFromString("HELLO WORLD");
+const textBox = new Box(Vec2(width / 10, height / 3), Vec2(9 / 10 * width, 2 / 3 * height));
+function renderStartScreen() {
+    const render = ray => renderBackground(ray, backgroundImage);
+    window = camera
+        .rayMap(render)
+        .to(window);
+    window.mapBox(
+        (x, y) => {
+            let p = Vec2(x, y).div(Vec2(textBox.diagonal.x, textBox.diagonal.y));
+            return helloImg.getPxl(p.x, p.y);
+        },
+        textBox,
+        false
+    );
+    window.paint();
+}
+
+function renderEndScreen() {
+
+}
+
+//========================================================================================
+/*                                                                                      *
+ *                                         MAIN                                         *
+ *                                                                                      */
+//========================================================================================
+
+
 const params = process.argv.slice(2);
-const isParallel = !(params.length > 0 && params[0] === "-s")
+const isParallel = !(params.length > 0 && params[0] === "-s");
+const GAME_STATES = {
+    START_SCREEN: 0,
+    GAME_LOOP: 1,
+    GAME_END: 2
+}
+let gameState = GAME_STATES.START_SCREEN;
+
 // Game loop
 const loopControl = loop(async (dt, time) => {
-    if (isParallel) await renderGameParallel(exposedWindow);
-    else {
-        renderGame(exposedWindow);
-        // renderGameFast(window);
+    if (gameState === GAME_STATES.START_SCREEN) {
+        renderStartScreen()
     }
-    gameUpdate();
+    if (gameState === GAME_STATES.GAME_LOOP) {
+        if (isParallel) await renderGameParallel(exposedWindow);
+        else renderGame(exposedWindow);
+        gameUpdate();
+    }
+    if (gameState === GAME_STATES.GAME_END) {
+        renderEndScreen();
+    }
     window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
-})
+}).play();
+
+
+
+
 
 
 

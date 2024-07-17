@@ -52,6 +52,5 @@ export function playSoundLoop(file) {
         audioInstance.close();
         clearInterval(id);
     };
-    ans.play();
     return ans;
 }
