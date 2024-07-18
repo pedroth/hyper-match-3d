@@ -7,10 +7,10 @@ import { readFileSync } from "node:fs";
 import Manifold from "./src/Manifold.js";
 import { Vec2, Vec3 } from "./src/Vector.js";
 import { Worker } from "node:worker_threads";
-import { renderBackground, traceWithCache } from "./src/RayTrace.js";
+import { rayTrace, renderBackground, traceWithCache } from "./src/RayTrace.js";
 import { arrayEquals, clamp, loop } from "./src/Utils.js";
 import { GOLDEN_RATIO, MAX_CAMERA_RADIUS, MOUSE_WHEEL_FORCE } from "./src/Constants.js";
-import { playSound, playSoundLoop } from "./src/Music.js";
+import { playSoundLoop } from "./src/Music.js";
 import { imageFromString } from "./src/Fonts.js";
 import Box from "./src/Box.js";
 
@@ -31,8 +31,8 @@ let selectedObjects = [];
 //========================================================================================
 
 
-const width = 640;
-const height = 480;
+const width = 640/2;
+const height = 480/2;
 let window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
@@ -43,7 +43,7 @@ const manifold = Manifold.readObj(meshObj, "manifold")
 scene.addList(manifold.asSpheres());
 
 const musicLoopHandler = playSoundLoop("./assets/music_sdl.wav");
-
+// musicLoopHandler.play();
 //========================================================================================
 /*                                                                                      *
  *                                    MOUSE HANDLING                                    *
@@ -57,22 +57,28 @@ window.onMouseDown((x, y, e) => {
     if (e.button === Window.RIGHT_CLICK) rightClick = true;
     mouse = Vec2(x, y);
     if (rightClick) return;
+    exposedWindow = window.exposure();
     const hit = scene.interceptWithRay(canvas2ray(x, y))
     if (hit) {
-        exposedWindow = window.exposure();
         if (selectedIndex === 0) {
             selectedObjects[selectedIndex++] = hit[2];
             return;
         }
         if (selectedIndex === 1) {
             const hitId = hit[2].props.id;
-            if (selectedObjects[0].props.id !== hitId && neighbors.some(x => x.props.id === hitId)) {
+            if (neighbors.some(x => x.props.id === hitId)) {
                 selectedObjects[selectedIndex++] = hit[2];
-            } else {
+                return;
+            }
+            if (selectedObjects[0].props.id === hitId) {
                 neighbors = [];
                 selectedIndex = 0;
                 selectedObjects = [];
+                return;
             }
+            neighbors = [];
+            selectedIndex = 1;
+            selectedObjects = [hit[2]]
         }
     } else {
         neighbors = [];
@@ -153,8 +159,8 @@ function getMinCameraRadius() {
 
 
 function renderGame(canvas) {
-    const render = ray =>
-        traceWithCache(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
+    const render = ray => rayTrace(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
+    // const render = ray => traceWithCache(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
     return camera
         .rayMap(render)
         .to(canvas);
@@ -289,25 +295,48 @@ function gameUpdate() {
         neighbors = [];
         selectedIndex = 0;
         selectedObjects = [];
+        exposedWindow = window.exposure();
     }
 }
 
-const helloImg = imageFromString("HELLO WORLD");
-const textBox = new Box(Vec2(width / 10, height / 3), Vec2(9 / 10 * width, 2 / 3 * height));
-function renderStartScreen() {
+const titleImg = imageFromString("HyperMatch 3D");
+const titleBox = new Box(Vec2(width / 10, 5 * height / 9), Vec2(9 / 10 * width, 7 * height / 9));
+const startBtnImg = imageFromString("Start Demo")
+const startBtnBox = new Box(Vec2(3 * width / 10, 1 * height / 9), Vec2(7 / 10 * width, 3 * height / 9));
+function renderStartScreen(time) {
     const render = ray => renderBackground(ray, backgroundImage);
     window = camera
         .rayMap(render, false)
         .to(window);
     window.mapBox(
         (x, y) => {
-            let p = Vec2(x, y).div(Vec2(textBox.diagonal.x, textBox.diagonal.y));
-            return helloImg.getPxl(p.x, p.y);
+            let p = Vec2(x, y).div(Vec2(titleBox.diagonal.x, titleBox.diagonal.y));
+            const c = titleImg.getPxl(p.x, p.y);
+            return c ? [1, 1, 1] : undefined
         },
-        textBox,
+        titleBox,
         false
     );
+    window.mapBox(
+        (x, y) => {
+            let p = Vec2(x, y).div(Vec2(startBtnBox.diagonal.x, titleBox.diagonal.y));
+            const c = startBtnImg.getPxl(p.x, p.y);
+            if (startBtnBox.collidesWith(mouse)) {
+                return c ? [0.9, 0.8, 0.1] : undefined
+            } else {
+                return c ?
+                    [0.1, Math.abs(Math.sin(time)), Math.abs(Math.cos(time))] :
+                    undefined
+            }
+        },
+        startBtnBox,
+        false
+    )
     window.paint();
+    if (startBtnBox.collidesWith(mouse)) {
+        mouse = Vec2();
+        setTimeout(() => gameState = GAME_STATES.GAME_LOOP, 10);
+    }
 }
 
 function renderEndScreen() {
@@ -333,7 +362,7 @@ let gameState = GAME_STATES.START_SCREEN;
 // Game loop
 const loopControl = loop(async (dt, time) => {
     if (gameState === GAME_STATES.START_SCREEN) {
-        renderStartScreen()
+        renderStartScreen(time)
     }
     if (gameState === GAME_STATES.GAME_LOOP) {
         if (isParallel) await renderGameParallel(exposedWindow);
