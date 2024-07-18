@@ -8,7 +8,7 @@ import Manifold from "./src/Manifold.js";
 import { Vec2, Vec3 } from "./src/Vector.js";
 import { Worker } from "node:worker_threads";
 import { rayTrace, renderBackground, traceWithCache } from "./src/RayTrace.js";
-import { arrayEquals, clamp, loop } from "./src/Utils.js";
+import { arrayEquals, clamp, loop, memoize } from "./src/Utils.js";
 import { GOLDEN_RATIO, MAX_CAMERA_RADIUS, MOUSE_WHEEL_FORCE } from "./src/Constants.js";
 import { playSoundLoop } from "./src/Music.js";
 import { imageFromString } from "./src/Fonts.js";
@@ -23,7 +23,8 @@ import Box from "./src/Box.js";
 let neighbors = [];
 let selectedIndex = 0;
 let selectedObjects = [];
-
+let gameScore = 1;
+let totalVertices = undefined;
 //========================================================================================
 /*                                                                                      *
  *                                      SCENE SETUP                                     *
@@ -40,9 +41,11 @@ const scene = new Scene();
 const backgroundImage = Image.ofUrl("./assets/map4.jpg");
 const meshObj = readFileSync("./assets/simple_bunny.obj", { encoding: "utf-8" });
 const manifold = Manifold.readObj(meshObj, "manifold")
-scene.addList(manifold.asSpheres());
+const spheres = manifold.asSpheres();
+totalVertices = spheres.length;
+scene.addList(spheres);
 
-const musicLoopHandler = playSoundLoop("./assets/music_sdl.wav");
+// const musicLoopHandler = playSoundLoop("./assets/music_sdl.wav");
 // musicLoopHandler.play();
 //========================================================================================
 /*                                                                                      *
@@ -119,6 +122,11 @@ window.onKeyDown((event) => {
     if ("escape" === event.key) {
         loopControl.stop();
         window.close();
+        return;
+    }
+    if ("return" === event.key && gameState !== GAME_STATES.LOOP) {
+        gameState = GAME_STATES.LOOP;
+        return;
     }
 })
 
@@ -279,7 +287,14 @@ function updateManifold() {
 }
 
 function gameUpdate() {
+    gameScore++;
     const graph = manifold.graph;
+    const spherePercentage = graph.getVertices().length / totalVertices;
+    console.log(`SpherePercentage: ${spherePercentage}`);
+    if (spherePercentage < 0.99) {
+        gameState = GAME_STATES.END;
+        return;
+    }
     if (selectedObjects.length === 0) return;
     if (selectedObjects.length === 1) {
         neighbors = graph
@@ -334,14 +349,41 @@ function renderStartScreen(time) {
     )
     window.paint();
     if (startBtnBox.collidesWith(mouse)) {
-        mouse = Vec2();
-        setTimeout(() => gameState = GAME_STATES.GAME_LOOP, 10);
+        setTimeout(() => gameState = GAME_STATES.LOOP, 10);
     }
 }
 
-function renderEndScreen() {
-
-}
+const endImg = imageFromString("Finished!");
+const endBox = new Box(Vec2(width / 10, 5 * height / 9), Vec2(9 / 10 * width, 7 * height / 9));
+const renderEndScreen = memoize((score) => {
+    const scoreImg = imageFromString(`Score: ${score}`);
+    const scoreBox = new Box(Vec2(7 * width / 100, 1 * height / 9), Vec2(width, 3 * height / 9));
+    return () => {
+        const render = ray => renderBackground(ray, backgroundImage);
+        window = camera
+            .rayMap(render, false)
+            .to(window);
+        window.mapBox(
+            (x, y) => {
+                let p = Vec2(x, y).div(Vec2(endBox.diagonal.x, endBox.diagonal.y));
+                const c = endImg.getPxl(p.x, p.y);
+                return c ? [1, 1, 1] : undefined
+            },
+            endBox,
+            false
+        );
+        window.mapBox(
+            (x, y) => {
+                let p = Vec2(x, y).div(Vec2(scoreBox.diagonal.x, scoreBox.diagonal.y));
+                const c = scoreImg.getPxl(p.x, p.y);
+                return c ? [1, 1, 1] : undefined
+            },
+            scoreBox,
+            false
+        );
+        window.paint();
+    }
+});
 
 //========================================================================================
 /*                                                                                      *
@@ -353,26 +395,27 @@ function renderEndScreen() {
 const params = process.argv.slice(2);
 const isParallel = !(params.length > 0 && params[0] === "-s");
 const GAME_STATES = {
-    START_SCREEN: 0,
-    GAME_LOOP: 1,
-    GAME_END: 2
+    START: 0,
+    LOOP: 1,
+    END: 2
 }
-let gameState = GAME_STATES.START_SCREEN;
+let gameState = GAME_STATES.START;
 
 // Game loop
 const loopControl = loop(async (dt, time) => {
-    if (gameState === GAME_STATES.START_SCREEN) {
+    if (gameState === GAME_STATES.START) {
         renderStartScreen(time)
     }
-    if (gameState === GAME_STATES.GAME_LOOP) {
+    if (gameState === GAME_STATES.LOOP) {
         if (isParallel) await renderGameParallel(exposedWindow);
         else renderGame(exposedWindow);
         gameUpdate();
+        window.setTitle(`SCORE: ${Math.floor(1e6 / (gameScore))}`);
     }
-    if (gameState === GAME_STATES.GAME_END) {
-        renderEndScreen();
+    if (gameState === GAME_STATES.END) {
+        renderEndScreen(Math10000 / gameScore)();
     }
-    window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
+    // window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
 }).play();
 
 

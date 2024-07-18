@@ -199,7 +199,8 @@ function getSphereFromFace(triangle, id) {
     const colorKey = GAME_COLORS_KEY_INDEXES[Math.floor(Math.random() * GAME_COLORS_KEYS.length)];
     return new Sphere(
         barycentric,
-        radiusAverage / triangle.length,
+        // radiusAverage / triangle.length,
+        0.025,
         {
             id: id,
             name: `sphere_${id}`,
