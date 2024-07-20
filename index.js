@@ -32,21 +32,23 @@ let totalVertices = undefined;
 //========================================================================================
 
 
-const width = 640/2;
-const height = 480/2;
+const width = 640;
+const height = 480;
 let window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
 const scene = new Scene();
 const backgroundImage = Image.ofUrl("./assets/map4.jpg");
 const meshObj = readFileSync("./assets/simple_bunny.obj", { encoding: "utf-8" });
-const manifold = Manifold.readObj(meshObj, "manifold")
+let manifold = Manifold.readObj(meshObj, "manifold")
 const spheres = manifold.asSpheres();
 totalVertices = spheres.length;
 scene.addList(spheres);
 
 // const musicLoopHandler = playSoundLoop("./assets/music_sdl.wav");
 // musicLoopHandler.play();
+
+
 //========================================================================================
 /*                                                                                      *
  *                                    MOUSE HANDLING                                    *
@@ -55,7 +57,7 @@ scene.addList(spheres);
 
 let rightClick = false;
 let mouse = Vec2();
-const canvas2ray = camera.rayFromImage(width, height);
+const canvas2ray = camera.rayFromImage(window.width, window.height);
 window.onMouseDown((x, y, e) => {
     if (e.button === Window.RIGHT_CLICK) rightClick = true;
     mouse = Vec2(x, y);
@@ -126,6 +128,9 @@ window.onKeyDown((event) => {
     }
     if ("return" === event.key && gameState !== GAME_STATES.LOOP) {
         gameState = GAME_STATES.LOOP;
+        scene.clear();
+        manifold = Manifold.readObj(meshObj, "manifold")
+        scene.addList(manifold.asSpheres());
         return;
     }
 })
@@ -167,8 +172,8 @@ function getMinCameraRadius() {
 
 
 function renderGame(canvas) {
-    const render = ray => rayTrace(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
-    // const render = ray => traceWithCache(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
+    // const render = ray => rayTrace(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
+    const render = ray => traceWithCache(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
     return camera
         .rayMap(render)
         .to(canvas);
@@ -178,8 +183,8 @@ let isFirstTime = true;
 const N = os.cpus().length;
 const WORKERS = [...Array(N)].map(() => new Worker("./src/RayTraceWorker.js", { type: 'module' }));
 function renderGameParallel(canvas) {
-    const w = width;
-    const h = height;
+    const w = canvas.width;
+    const h = canvas.height;
     return Promise
         .all(
             WORKERS.map((worker, k) => {
@@ -290,7 +295,6 @@ function gameUpdate() {
     gameScore++;
     const graph = manifold.graph;
     const spherePercentage = graph.getVertices().length / totalVertices;
-    console.log(`SpherePercentage: ${spherePercentage}`);
     if (spherePercentage < 0.99) {
         gameState = GAME_STATES.END;
         return;
@@ -349,15 +353,19 @@ function renderStartScreen(time) {
     )
     window.paint();
     if (startBtnBox.collidesWith(mouse)) {
-        setTimeout(() => gameState = GAME_STATES.LOOP, 10);
+        setTimeout(() => {
+            // window.setSize(window.width / 2, window.height / 2);
+            gameState = GAME_STATES.LOOP
+        }, 10);
     }
 }
 
 const endImg = imageFromString("Finished!");
 const endBox = new Box(Vec2(width / 10, 5 * height / 9), Vec2(9 / 10 * width, 7 * height / 9));
 const renderEndScreen = memoize((score) => {
+    console.log(score);
     const scoreImg = imageFromString(`Score: ${score}`);
-    const scoreBox = new Box(Vec2(7 * width / 100, 1 * height / 9), Vec2(width, 3 * height / 9));
+    const scoreBox = new Box(Vec2(0, 1 * height / 9), Vec2(width, 3 * height / 9));
     return () => {
         const render = ray => renderBackground(ray, backgroundImage);
         window = camera
@@ -385,6 +393,10 @@ const renderEndScreen = memoize((score) => {
     }
 });
 
+const scoreFunc = (score) => {
+    return Math.floor(1e6 / score);
+}
+
 //========================================================================================
 /*                                                                                      *
  *                                         MAIN                                         *
@@ -410,10 +422,10 @@ const loopControl = loop(async (dt, time) => {
         if (isParallel) await renderGameParallel(exposedWindow);
         else renderGame(exposedWindow);
         gameUpdate();
-        window.setTitle(`SCORE: ${Math.floor(1e6 / (gameScore))}`);
+        window.setTitle(`SCORE: ${scoreFunc(gameScore)}`);
     }
     if (gameState === GAME_STATES.END) {
-        renderEndScreen(Math10000 / gameScore)();
+        renderEndScreen(scoreFunc(gameScore))();
     }
     // window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
 }).play();

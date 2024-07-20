@@ -40,8 +40,8 @@ function main(inputs) {
     for (let y = startRow; y < endRow; y++) {
         for (let x = 0; x < width; x++) {
             const ray = rayGen(x, height - 1 - y)
-            // const [red, green, blue] = traceWithCache(ray, scene, { bounces, backgroundImage, selectedObjects, neighbors});
-            const [red, green, blue] = rayTrace(ray, scene, { bounces, backgroundImage, selectedObjects, neighbors});
+            const [red, green, blue] = traceWithCache(ray, scene, { bounces, backgroundImage, selectedObjects, neighbors});
+            // const [red, green, blue] = rayTrace(ray, scene, { bounces, backgroundImage, selectedObjects, neighbors});
             image[index++] = red;
             image[index++] = green;
             image[index++] = blue;

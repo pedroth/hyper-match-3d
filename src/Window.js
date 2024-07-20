@@ -36,21 +36,21 @@ export default class Window {
 
     setSize(w, h) {
         const newImage = new Float32Array(w * h * 4);
-        for (let k = 0; k < newImage.length; k += 4) {
-            const i = Math.floor(k / (4 * w));
-            const j = Math.floor((k / 4) % w);
-            const iOrig = Math.floor(i / h) * this._height;
-            const jOrig = Math.floor(j / w) * this._width;
-            const index = w * iOrig + jOrig;
-            newImage[k] = this._image[index];
-            newImage[k + 1] = this._image[index + 1];
-            newImage[k + 2] = this._image[index + 2];
-            newImage[k + 3] = this._image[index + 3];
-        }
+        // for (let k = 0; k < newImage.length; k += 4) {
+        //     const i = Math.floor(k / (4 * w));
+        //     const j = Math.floor((k / 4) % w);
+        //     const iOrig = (i / w) * this._width;
+        //     const jOrig = (j / h) * this._height;
+        //     const index = 4 * (this._width * iOrig + jOrig);
+        //     newImage[k] = this._image[index];
+        //     newImage[k + 1] = this._image[index + 1];
+        //     newImage[k + 2] = this._image[index + 2];
+        //     newImage[k + 3] = this._image[index + 3];
+        // }
         this._image = newImage;
         this._width = w;
         this._height = h;
-        this.box = new Box(Vec2(0, 0), Vec2(this._width, this._height));
+        this.box = new Box(Vec2(0, 0), Vec2(w, h));
         // Object.keys(this._eventHandlers).forEach(eventName => {
         //     if (eventName !== "mouseWheel") {
         //         this._window.on(eventName, handleMouse(this, this._eventHandlers[eventName]));
@@ -250,32 +250,6 @@ export default class Window {
         this._image[index + 2] = b;
         this._image[index + 3] = 1.0;
         return this;
-    }
-
-    drawLine(p1, p2, shader) {
-        const w = this._width;
-        const h = this._height;
-        const line = clipLine(p1, p2, this.box);
-        if (line.length <= 1) return;
-        const [pi, pf] = line;
-        const v = pf.sub(pi);
-        const n = v.map(Math.abs).fold((e, x) => e + x);
-        for (let k = 0; k < n; k++) {
-            const s = k / n;
-            const lineP = pi.add(v.scale(s)).map(Math.floor);
-            const [x, y] = lineP.toArray();
-            const j = x;
-            const i = h - 1 - y;
-            const index = w * i + j;
-            const color = shader(x, y);
-            if (!color) continue;
-            this._image[index] = color;
-        }
-        return this;
-    }
-
-    drawTriangle(x1, x2, x3, shader) {
-        return drawConvexPolygon(this, [x1, x2, x3], shader);
     }
 
     //========================================================================================
