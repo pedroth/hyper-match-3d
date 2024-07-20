@@ -14,6 +14,7 @@ import { playSoundLoop } from "./src/Music.js";
 import { imageFromString } from "./src/Fonts.js";
 import Box from "./src/Box.js";
 
+
 //========================================================================================
 /*                                                                                      *
  *                                      GAME VARS                                       *
@@ -25,6 +26,8 @@ let selectedIndex = 0;
 let selectedObjects = [];
 let gameScore = 1;
 let totalVertices = undefined;
+
+
 //========================================================================================
 /*                                                                                      *
  *                                      SCENE SETUP                                     *
@@ -45,8 +48,8 @@ const spheres = manifold.asSpheres();
 totalVertices = spheres.length;
 scene.addList(spheres);
 
-// const musicLoopHandler = playSoundLoop("./assets/music_sdl.wav");
-// musicLoopHandler.play();
+const musicLoopHandler = playSoundLoop("./assets/rain-in-forest_sdl.wav");
+musicLoopHandler.play();
 
 
 //========================================================================================
