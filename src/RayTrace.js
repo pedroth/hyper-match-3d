@@ -3,6 +3,15 @@ import { clamp } from "./Utils.js";
 
 const clampAcos = clamp(-1, 1);
 
+function selectShader(ray, hit) {
+    const r = hit[1].sub(hit[2].position).normalize();
+    const d = ray.dir;
+    let dot = Math.abs(d.dot(r));
+    dot = dot * dot;
+    let c = hit[2].props.color;
+    return [(1 - dot) + dot * c[0], (1 - dot) + dot * c[1], (1 - dot) + dot * c[2]];
+}
+
 export function rayTrace(ray, scene, options) {
     const { bounces, selectedObjects, backgroundImage, neighbors } = options;
     // if (bounces < 0) return colorFromSelectedObjects(ray.init, scene, selectedObjects);
@@ -11,10 +20,10 @@ export function rayTrace(ray, scene, options) {
     if (!hit) return renderBackground(ray, backgroundImage);
     const [, p, e] = hit;
     const color = e.props?.color ?? [0, 0, 0];
-    if (
-        selectedObjects.some(s => s.props.name === e.props.name) ||
-        neighbors.some(s => s.props.name === e.props.name)
-    ) {
+    if (selectedObjects.some(s => s.props.name === e.props.name)) {
+        return selectShader(ray, hit);
+    }
+    if (neighbors.some(s => s.props.name === e.props.name)) {
         return color
     };
     const mat = e.props?.material ?? Diffuse();
@@ -54,7 +63,7 @@ export function colorFromSelectedObjects(p, scene, selectedObjects) {
     return [0, 0, 0];
 }
 
-const colorCache = (gridSpace, maxSamples = 50) => {
+const colorCache = (gridSpace, maxSamples = 1e5) => {
     const point2ColorMap = {};
     const ans = {};
     ans.hash = (p) => {
@@ -82,13 +91,13 @@ const colorCache = (gridSpace, maxSamples = 50) => {
         const h = ans.hash(p);
         const cachedObj = point2ColorMap[h];
         if (!cachedObj) return undefined;
-        const { color, samples } = cachedObj
+        const { color } = cachedObj
         return Math.random() < 0.5 ? color : undefined;
     }
 
     return ans;
 }
-const cache = colorCache(0.01);
+const cache = colorCache(0.005);
 export function traceWithCache(ray, scene, options) {
     const { bounces, selectedObjects, backgroundImage, neighbors } = options;
     // if (bounces < 0) return colorFromSelectedObjects(ray.init, scene, selectedObjects);
@@ -97,10 +106,10 @@ export function traceWithCache(ray, scene, options) {
     if (!hit) return renderBackground(ray, backgroundImage);
     const [, p, e] = hit;
     let color = e.props?.color ?? [0, 0, 0];
-    if (
-        selectedObjects.some(s => s.props.name === e.props.name) ||
-        neighbors.some(s => s.props.name === e.props.name)
-    ) {
+    if (selectedObjects.some(s => s.props.name === e.props.name)) {
+        return selectShader(ray, hit);
+    }
+    if (neighbors.some(s => s.props.name === e.props.name)) {
         return color
     };
     const cachedColor = cache.get(p);

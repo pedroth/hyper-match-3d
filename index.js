@@ -14,7 +14,6 @@ import { playSoundLoop } from "./src/Music.js";
 import { imageFromString } from "./src/Fonts.js";
 import Box from "./src/Box.js";
 
-
 //========================================================================================
 /*                                                                                      *
  *                                      GAME VARS                                       *
@@ -24,9 +23,11 @@ import Box from "./src/Box.js";
 let neighbors = [];
 let selectedIndex = 0;
 let selectedObjects = [];
-let gameScore = 1;
+let vertexMatched = 0;
+const percentageToWin = 0.1;
 let totalVertices = undefined;
-
+let vertex2Win = undefined;
+let finalTime = 0;
 
 //========================================================================================
 /*                                                                                      *
@@ -46,6 +47,7 @@ const meshObj = readFileSync("./assets/simple_bunny.obj", { encoding: "utf-8" })
 let manifold = Manifold.readObj(meshObj, "manifold")
 const spheres = manifold.asSpheres();
 totalVertices = spheres.length;
+vertex2Win = Math.floor(percentageToWin * totalVertices);
 scene.addList(spheres);
 
 const musicLoopHandler = playSoundLoop("./assets/rain-in-forest_sdl.wav");
@@ -132,8 +134,11 @@ window.onKeyDown((event) => {
     if ("return" === event.key && gameState !== GAME_STATES.LOOP) {
         gameState = GAME_STATES.LOOP;
         scene.clear();
-        manifold = Manifold.readObj(meshObj, "manifold")
+        manifold = Manifold.readObj(meshObj, "manifold");
         scene.addList(manifold.asSpheres());
+        finalTime = 0;
+        vertexMatched = 0;
+        isFirstTime = true;
         return;
     }
 })
@@ -289,16 +294,16 @@ function updateManifold() {
     ids.forEach(id => {
         findMatch(id)
             .forEach(sphereIds => {
+                vertexMatched++;
                 removeSpheresWithId(sphereIds)
             });
     })
 }
 
-function gameUpdate() {
-    gameScore++;
+function gameUpdate(dt) {
+    finalTime += dt;
     const graph = manifold.graph;
-    const spherePercentage = graph.getVertices().length / totalVertices;
-    if (spherePercentage < 0.99) {
+    if (vertexMatched > vertex2Win) {
         gameState = GAME_STATES.END;
         return;
     }
@@ -356,17 +361,18 @@ function renderStartScreen(time) {
     )
     window.paint();
     if (startBtnBox.collidesWith(mouse)) {
-        setTimeout(() => {
-            // window.setSize(window.width / 2, window.height / 2);
-            gameState = GAME_STATES.LOOP
-        }, 10);
+        setTimeout(
+            () => {
+                gameState = GAME_STATES.LOOP
+            },
+            10
+        );
     }
 }
 
 const endImg = imageFromString("Finished!");
 const endBox = new Box(Vec2(width / 10, 5 * height / 9), Vec2(9 / 10 * width, 7 * height / 9));
 const renderEndScreen = memoize((score) => {
-    console.log(score);
     const scoreImg = imageFromString(`Score: ${score}`);
     const scoreBox = new Box(Vec2(0, 1 * height / 9), Vec2(width, 3 * height / 9));
     return () => {
@@ -396,8 +402,8 @@ const renderEndScreen = memoize((score) => {
     }
 });
 
-const scoreFunc = (score) => {
-    return Math.floor(1e6 / score);
+const scoreFunc = (score, time) => {
+    return Math.floor(1e6 * score / time);
 }
 
 //========================================================================================
@@ -424,13 +430,13 @@ const loopControl = loop(async (dt, time) => {
     if (gameState === GAME_STATES.LOOP) {
         if (isParallel) await renderGameParallel(exposedWindow);
         else renderGame(exposedWindow);
-        gameUpdate();
-        window.setTitle(`SCORE: ${scoreFunc(gameScore)}`);
+        gameUpdate(dt);
+        window.setTitle(`HyperMatch 3D | Vertex Matched: ${vertexMatched}/${vertex2Win} | Time: ${Math.floor(finalTime)}`);
     }
     if (gameState === GAME_STATES.END) {
-        renderEndScreen(scoreFunc(gameScore))();
+        renderEndScreen(scoreFunc(vertexMatched / vertex2Win, finalTime))();
     }
-    // window.setTitle(`FPS: ${Math.floor(1 / dt)}`);
+    // window.setTitle(`HyperMatch 3D |FPS: ${Math.floor(1 / dt)}`);
 }).play();
 
 
