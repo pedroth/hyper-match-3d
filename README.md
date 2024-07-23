@@ -15,8 +15,27 @@ HyperMatch 3D game, is a manifold match 3 game, where you switch sphere position
 # TODOs
 
 - [ ] No bugs
-- [ ] Better network generation
 - [X] Select shader
+- [ ] Create web version
+- [ ] Better network generation
 - [-] Create executable (not possible)
 - [ ] Improve performance
 - [ ] Select difficulty level (?)
+
+
+# Status of project
+
+Dedicated approximately 30 days to this. The demo is finished, you can run it using node:
+
+Clone project and install dependencies:
+`bun install` or `npm install`.
+
+Run it:
+`node index.js`. As of 2024, `bun` is not working properly.
+
+## Major problems
+
+- As of 2024, is not possible to create a single executable application(SEA) with node and [es6 imports](https://github.com/nodejs/single-executable/discussions/84)
+
+- Also the software render is pretty slow, even when using multi-threading achieving a range of 3 to 8 fps.
+

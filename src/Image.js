@@ -211,6 +211,21 @@ export default class Image {
         return img;
     }
 
+    static ofPPM(path) {
+        const imageFile = readFileSync(path);
+        const { width: w, height: h, pixels } = parsePPM(imageFile);
+        const img = Image.ofSize(w, h);
+        for (let k = 0; k < pixels.length; k++) {
+            const { r, g, b } = pixels[k];
+            const i = Math.floor(k / w);
+            const j = k % w;
+            const x = j;
+            const y = h - 1 - i;
+            img.setPxl(x, y, [r / MAX_8BIT, g / MAX_8BIT, b / MAX_8BIT]);
+        }
+        return img;
+    }
+
     static ofSize(width, height) {
         return new Image(width, height);
     }

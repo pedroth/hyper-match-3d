@@ -4,7 +4,7 @@ import { Vec2 } from "./Vector.js";
 
 const gridX = 3;
 const gridY = 13;
-const fontImage = Image.ofUrl("./assets/fonts.png");
+const fontImage = Image.ofPPM("./assets/fonts.ppm");
 const fontImageWidth = fontImage.width;
 const fontImageHeight = fontImage.height;
 const deltaX = fontImageWidth / gridX;

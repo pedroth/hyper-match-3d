@@ -42,15 +42,15 @@ let window = Window.ofSize(width, height);
 let exposedWindow = window.exposure();
 const camera = new Camera().orbit(2);
 const scene = new Scene();
-const backgroundImage = Image.ofUrl("./assets/map4.jpg");
-const meshObj = readFileSync("./assets/simple_bunny.obj", { encoding: "utf-8" });
+const backgroundImage = Image.ofPPM("./assets/index.ppm");
+const meshObj = readFileSync("./assets/index.obj", { encoding: "utf-8" });
 let manifold = Manifold.readObj(meshObj, "manifold")
 const spheres = manifold.asSpheres();
 totalVertices = spheres.length;
 vertex2Win = Math.floor(percentageToWin * totalVertices);
 scene.addList(spheres);
 
-const musicLoopHandler = playSoundLoop("./assets/rain-in-forest_sdl.wav");
+const musicLoopHandler = playSoundLoop("./assets/index.wav");
 musicLoopHandler.play();
 
 
@@ -414,7 +414,8 @@ const scoreFunc = (score, time) => {
 
 
 const params = process.argv.slice(2);
-const isParallel = !(params.length > 0 && params[0] === "-s");
+const isParallel = !params.length > 0;
+const isRaster = params.length > 0 && params[0] === "-r";
 const GAME_STATES = {
     START: 0,
     LOOP: 1,
@@ -429,14 +430,16 @@ const loopControl = loop(async (dt, time) => {
     }
     if (gameState === GAME_STATES.LOOP) {
         if (isParallel) await renderGameParallel(exposedWindow);
+        else if (isRaster) renderGameFast(window);
         else renderGame(exposedWindow);
+
         gameUpdate(dt);
         window.setTitle(`HyperMatch 3D | Vertex Matched: ${vertexMatched}/${vertex2Win} | Time: ${Math.floor(finalTime)}`);
     }
     if (gameState === GAME_STATES.END) {
         renderEndScreen(scoreFunc(vertexMatched / vertex2Win, finalTime))();
     }
-    // window.setTitle(`HyperMatch 3D |FPS: ${Math.floor(1 / dt)}`);
+    window.setTitle(`HyperMatch 3D |FPS: ${Math.floor(1 / dt)}`);
 }).play();
 
 
