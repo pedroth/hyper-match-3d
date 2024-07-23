@@ -18,7 +18,7 @@ HyperMatch 3D game, is a manifold match 3 game, where you switch sphere position
 - [X] Select shader
 - [ ] Create web version
 - [ ] Better network generation
-- [-] Create executable (not possible)
+- [ ] Create executable (not possible)
 - [ ] Improve performance
 - [ ] Select difficulty level (?)
 
