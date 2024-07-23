@@ -187,20 +187,24 @@ function getSphereFromFace(triangle, id) {
     const [p1, p2, p3] = triangle;
     const barycentric = p1.scale(1 / 3).add(p2.scale(1 / 3)).add(p3.scale(1 / 3));
     let radiusAverage = 0;
+    let minRadius = Number.MAX_VALUE;
     for (let i = 0; i < triangle.length; i++) {
-        radiusAverage +=
-            barycentric.sub(
-                triangle[i]
-                    .add(triangle[(i + 1) % triangle.length])
-                    .scale(0.5)
-            )
-                .length();
+        const radius = barycentric.sub(
+            triangle[i]
+                .add(triangle[(i + 1) % triangle.length])
+                .scale(0.5)
+        )
+            .length();
+        radiusAverage += radius;
+        minRadius = Math.min(minRadius, radius);
+
     }
     const colorKey = GAME_COLORS_KEY_INDEXES[Math.floor(Math.random() * GAME_COLORS_KEYS.length)];
     return new Sphere(
         barycentric,
         // radiusAverage / triangle.length,
-        0.025,
+        // 0.025,
+        minRadius,
         {
             id: id,
             name: `sphere_${id}`,

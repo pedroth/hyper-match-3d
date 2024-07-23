@@ -3,7 +3,7 @@ import { clamp } from "./Utils.js";
 
 const clampAcos = clamp(-1, 1);
 
-function selectShader(ray, hit) {
+export function selectShader(ray, hit) {
     const r = hit[1].sub(hit[2].position).normalize();
     const d = ray.dir;
     let dot = Math.abs(d.dot(r));
@@ -159,4 +159,23 @@ export function debugCache(ray, scene, options) {
     ];
     cache.set(p, finalColor);
     return [0, 0, 1];
+}
+
+let PREV_OBJ = undefined;
+export function simpleTrace(ray, scene, options) {
+    const { selectedObjects, backgroundImage, neighbors } = options;
+    let hit;
+    if (PREV_OBJ) hit = PREV_OBJ.interceptWithRay(ray);
+    if (!hit) hit = scene.interceptWithRay(ray);
+    if (!hit) return renderBackground(ray, backgroundImage);
+    const [, , e] = hit;
+    PREV_OBJ = e;
+    const color = e.props?.color ?? [0, 0, 0];
+    if (selectedObjects.some(s => s.props.name === e.props.name)) {
+        return selectShader(ray, hit);
+    }
+    if (neighbors.some(s => s.props.name === e.props.name)) {
+        return color
+    };
+    return color;
 }

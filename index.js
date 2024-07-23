@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import Manifold from "./src/Manifold.js";
 import { Vec2, Vec3 } from "./src/Vector.js";
 import { Worker } from "node:worker_threads";
-import { rayTrace, renderBackground, traceWithCache } from "./src/RayTrace.js";
+import { rayTrace, renderBackground, simpleTrace, traceWithCache } from "./src/RayTrace.js";
 import { arrayEquals, clamp, loop, memoize } from "./src/Utils.js";
 import { GOLDEN_RATIO, MAX_CAMERA_RADIUS, MOUSE_WHEEL_FORCE } from "./src/Constants.js";
 import { playSoundLoop } from "./src/Music.js";
@@ -24,7 +24,7 @@ let neighbors = [];
 let selectedIndex = 0;
 let selectedObjects = [];
 let vertexMatched = 0;
-const percentageToWin = 0.1;
+const percentageToWin = 0.01;
 let totalVertices = undefined;
 let vertex2Win = undefined;
 let finalTime = 0;
@@ -180,8 +180,9 @@ function getMinCameraRadius() {
 
 
 function renderGame(canvas) {
+    const render = ray => simpleTrace(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
     // const render = ray => rayTrace(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
-    const render = ray => traceWithCache(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
+    // const render = ray => traceWithCache(ray, scene, { bounces: 1, backgroundImage, selectedObjects, neighbors });
     return camera
         .rayMap(render)
         .to(canvas);
