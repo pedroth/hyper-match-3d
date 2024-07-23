@@ -85,7 +85,7 @@ export default class Camera {
     return this;
   }
 
-  rayMap(lambdaWithRays, paint=true) {
+  rayMap(lambdaWithRays, paint = true) {
     return {
       to: canvas => {
         const w = canvas.width;
@@ -213,10 +213,13 @@ function rasterSphere({ sphere, canvas, zBuffer, camera }) {
   y = Math.floor(y);
   if (x < 0 || x >= w || y < 0 || y >= h) return;
   const intRadius = Math.ceil((radius) * (distanceToPlane / z) * w);
+  const intRadiusSquared = intRadius * intRadius;
   for (let k = -intRadius; k < intRadius; k++) {
     for (let l = -intRadius; l < intRadius; l++) {
       const xl = Math.max(0, Math.min(w - 1, x + k));
       const yl = Math.floor(y + l);
+      const squareLength = k * k + l * l;
+      if(squareLength > intRadiusSquared) continue;
       const [i, j] = canvas.canvas2grid(xl, yl);
       const zBufferIndex = Math.floor(w * i + j);
       if (z < zBuffer[zBufferIndex]) {
