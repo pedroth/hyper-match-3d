@@ -1,9 +1,9 @@
-import Camera from "./Camera.js";
-import Image from "./Image.js";
-import { debugCache, rayTrace, traceWithCache } from "./RayTrace.js";
-import Scene from "./Scene.js"
-import Sphere from "./Sphere.js";
-import { parentPort } from "node:worker_threads";
+const Camera = require('./Camera.js');
+const Image = require('./Image.js');
+const { debugCache, rayTrace, traceWithCache } = require('./RayTrace.js');
+const Scene = require('./Scene.js');
+const Sphere = require('./Sphere.js');
+const { parentPort } = require('node:worker_threads');
 
 let scene; 
 let backgroundImage;

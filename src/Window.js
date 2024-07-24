@@ -1,14 +1,14 @@
-import sdl from "@kmamal/sdl"
-import Box from "./Box.js";
-import { Vec2 } from "./Vector.js";
-import { MAX_8BIT } from "./Constants.js";
-import { clamp, memoize } from "./Utils.js";
-import os from 'node:os';
-import { Worker } from "node:worker_threads";
+const sdl = require("@kmamal/sdl");
+const Box = require("./Box.js");
+const { Vec2 } = require("./Vector.js");
+const { MAX_8BIT } = require("./Constants.js");
+const { clamp, memoize } = require("./Utils.js");
+const os = require('node:os');
+const { Worker } = require("node:worker_threads");
 
 const clamp01 = clamp();
 
-export default class Window {
+class Window {
 
     constructor(width, height, title = "") {
         this._width = width;
@@ -375,3 +375,5 @@ const createWorker = (main, lambda, dependencies) => {
     const worker = new Worker(workerFile, { eval: true });
     return worker;
 };
+
+module.exports = Window;

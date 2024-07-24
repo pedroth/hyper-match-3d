@@ -1,5 +1,5 @@
-import Ray from "./Ray.js";
-import { clamp } from "./Utils.js";
+const Ray = require('./Ray.js');
+const { clamp } = require('./Utils.js');
 
 const clampAcos = clamp(-1, 1);
 
@@ -12,7 +12,7 @@ function selectShader(ray, hit) {
     return [(1 - dot) + dot * c[0], (1 - dot) + dot * c[1], (1 - dot) + dot * c[2]];
 }
 
-export function rayTrace(ray, scene, options) {
+function rayTrace(ray, scene, options) {
     const { bounces, selectedObjects, backgroundImage, neighbors } = options;
     // if (bounces < 0) return colorFromSelectedObjects(ray.init, scene, selectedObjects);
     if (bounces < 0) return [0, 0, 0];
@@ -40,14 +40,14 @@ export function rayTrace(ray, scene, options) {
     ];
 }
 
-export function renderBackground(ray, backgroundImage) {
+function renderBackground(ray, backgroundImage) {
     const dir = ray.dir;
     const theta = Math.atan2(dir.y, dir.x) / (Math.PI);
     const alpha = Math.acos(-clampAcos(dir.z)) / (Math.PI);
     return backgroundImage.getPxl(theta * backgroundImage.width, alpha * backgroundImage.height);
 }
 
-export function colorFromSelectedObjects(p, scene, selectedObjects) {
+function colorFromSelectedObjects(p, scene, selectedObjects) {
     if (selectedObjects.length <= 0) return [0, 0, 0];
     const [first] = selectedObjects;
     const pointSample = first.sample();
@@ -98,7 +98,7 @@ const colorCache = (gridSpace, maxSamples = 1e5) => {
     return ans;
 }
 const cache = colorCache(0.005);
-export function traceWithCache(ray, scene, options) {
+function traceWithCache(ray, scene, options) {
     const { bounces, selectedObjects, backgroundImage, neighbors } = options;
     // if (bounces < 0) return colorFromSelectedObjects(ray.init, scene, selectedObjects);
     if (bounces < 0) return [0, 0, 0];
@@ -130,7 +130,7 @@ export function traceWithCache(ray, scene, options) {
     return finalColor;
 }
 
-export function debugCache(ray, scene, options) {
+function debugCache(ray, scene, options) {
     const { bounces, selectedObjects, backgroundImage, neighbors } = options;
     if (bounces < 0) return [0, 0, 0];
     const hit = scene.interceptWithRay(ray)
@@ -159,4 +159,14 @@ export function debugCache(ray, scene, options) {
     ];
     cache.set(p, finalColor);
     return [0, 0, 1];
+}
+
+module.exports = {
+    selectShader,
+    rayTrace,
+    renderBackground,
+    colorFromSelectedObjects,
+    colorCache,
+    traceWithCache,
+    debugCache
 }

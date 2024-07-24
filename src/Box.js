@@ -1,6 +1,6 @@
-import Vec from "./Vector.js";
+const { default: Vec } = require('./Vector.js');
 
-export default class Box {
+class Box {
     constructor(min, max, props = {}) {
         this.isEmpty = min === undefined || max === undefined;
         if (this.isEmpty) return this;
@@ -151,6 +151,8 @@ export default class Box {
 
     static EMPTY = new Box();
 }
+
+module.exports = Box;
 
 function maxComp(u) {
     return u.fold((e, x) => Math.max(e, x), -Number.MAX_VALUE);

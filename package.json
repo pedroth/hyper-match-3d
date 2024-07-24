@@ -1,7 +1,7 @@
 {
   "name": "manifold-match-3",
   "module": "index.js",
-  "type": "module",
+  "type": "commonjs",
   "dependencies": {
     "@kmamal/sdl": "^0.10.7"
   },

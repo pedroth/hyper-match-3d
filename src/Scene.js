@@ -1,10 +1,11 @@
-import Box from "./Box.js";
-import PQueue from "./PQueue.js";
-import Sphere from "./Sphere.js";
-import { argmin } from "./Utils.js";
-import Vec, { Vec3 } from "./Vector.js";
+const Box = require('./Box.js');
+const PQueue = require('./PQueue.js');
+const Sphere = require('./Sphere.js');
+const { argmin } = require('./Utils.js');
 
-export default class Scene {
+const { default: Vec, Vec3 } = require('./Vector.js');
+
+class Scene {
   constructor(k = 10) {
     this.k = k;
     this.id2LeafMap = {};
@@ -156,6 +157,8 @@ export default class Scene {
       }));
   }
 }
+
+module.exports = Scene;
 
 class Node {
   isLeaf = false;
@@ -350,7 +353,7 @@ function clusterLeafs(box, leafs, it = 10) {
     // predict
     for (let j = 0; j < leafs.length; j++) {
       const leafPosition = leafs[j].box.center;
-      const kIndex = argmin(clusters,   c => c.sub(leafPosition).squareLength());
+      const kIndex = argmin(clusters, c => c.sub(leafPosition).squareLength());
       clusterIndexes[kIndex].push(j);
     }
     // add a point to an empty cluster 

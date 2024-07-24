@@ -1,6 +1,6 @@
-import { Vec2, Vec3 } from "./Vector.js";
+const { Vec2, Vec3 } = require('./Vector.js');
 
-export function groupBy(array, groupFunction) {
+function groupBy(array, groupFunction) {
     const ans = {};
     array.forEach((x, i) => {
         const key = groupFunction(x, i);
@@ -10,7 +10,7 @@ export function groupBy(array, groupFunction) {
     return ans;
 }
 
-export function argmin(array, costFunction = x => x) {
+function argmin(array, costFunction = x => x) {
     let argminIndex = -1;
     let cost = Number.MAX_VALUE;
     // faster than forEach
@@ -24,7 +24,7 @@ export function argmin(array, costFunction = x => x) {
     return argminIndex;
 }
 
-export function memoize(func) {
+function memoize(func) {
     const cache = {}
     return (...args) => {
         const key = JSON.stringify(args.map(x => typeof x === "object" ? JSON.stringify(x) : x.toString()));
@@ -35,7 +35,7 @@ export function memoize(func) {
     }
 }
 
-export function randomPointInSphere(dim) {
+function randomPointInSphere(dim) {
     let randomInSphere;
     while (true) {
         const random = dim === 2 ?
@@ -48,11 +48,11 @@ export function randomPointInSphere(dim) {
     return randomInSphere;
 }
 
-export function mod(n, m) {
+function mod(n, m) {
     return ((n % m) + m) % m;
 }
 
-export function clamp(min = 0, max = 1) {
+function clamp(min = 0, max = 1) {
     return x => {
         if (x < min) return min;
         if (x > max) return max;
@@ -62,12 +62,12 @@ export function clamp(min = 0, max = 1) {
 
 const RANDOM = Array(1000).fill().map(Math.random);
 let i = 0;
-export function fRandom() {
+function fRandom() {
     if (i > 1e6) i = 0;
     return RANDOM[i++ % RANDOM.length];
 }
 
-export function debounce(lambda, debounceTimeInMillis = 500) {
+function debounce(lambda, debounceTimeInMillis = 500) {
     let timerId;
     return (...vars) => {
         if (timerId) {
@@ -80,7 +80,7 @@ export function debounce(lambda, debounceTimeInMillis = 500) {
     };
 }
 
-export function loop(lambda) {
+function loop(lambda) {
     let isFinished = false;
     const play = async ({ time, oldT }) => {
         const newT = new Date().getTime();
@@ -104,10 +104,23 @@ export function loop(lambda) {
     return loopControl;
 }
 
-export function arrayEquals(a, b) {
+function arrayEquals(a, b) {
     if (a.length !== b.length) return false;
     for (let i = 0; i < a.length; i++) {
         if (a[i] !== b[i]) return false;
     }
     return true;
 }
+
+module.exports = {
+    groupBy,
+    argmin,
+    memoize,
+    randomPointInSphere,
+    mod,
+    clamp,
+    fRandom,
+    debounce,
+    loop,
+    arrayEquals
+};

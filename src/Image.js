@@ -1,14 +1,13 @@
-import Box from "./Box.js";
-import { MAX_8BIT } from "./Constants.js";
-import { Vec2 } from "./Vector.js";
-import { clamp, mod } from "./Utils.js";
-import { unlinkSync, readFileSync } from "fs";
-import { execSync } from "child_process";
+const Box = require('./Box.js');
+const { MAX_8BIT } = require('./Constants.js');
+const { Vec2 } = require('./Vector.js');
+const { clamp, mod } = require('./Utils.js');
+const { unlinkSync, readFileSync } = require('fs');
+const { execSync } = require('child_process');
 
 const clamp01 = clamp();
 
-
-export default class Image {
+class Image {
 
     constructor(width, height) {
         this._width = width;
@@ -239,6 +238,8 @@ export default class Image {
             })
     }
 }
+
+module.exports = Image;
 
 //========================================================================================
 /*                                                                                      *

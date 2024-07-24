@@ -10,7 +10,7 @@
  * For is faster than reduce, forEach, maps, perf here: https://replit.com/@pedroth/forVsForEach#index.js
  * Didn't use private vars because of performance
  */
-export default class Vec {
+class Vec {
   constructor(array) {
     this._vec = array;
     this._n = this._vec.length;
@@ -176,12 +176,19 @@ export default class Vec {
   };
 }
 
-export const BUILD_VEC = (n) => new Float64Array(n);
-export const COPY_VEC = (array) => Float64Array.from(array);
-export class VectorException extends Error { }
 
-export const Vec3 = (x = 0, y = 0, z = 0) => new Vector3(x, y, z);
-export const Vec2 = (x = 0, y = 0) => new Vector2(x, y);
+const BUILD_VEC = (n) => new Float64Array(n);
+const COPY_VEC = (array) => Float64Array.from(array);
+class VectorException extends Error { }
+
+const Vec3 = (x = 0, y = 0, z = 0) => new Vector3(x, y, z);
+const Vec2 = (x = 0, y = 0) => new Vector2(x, y);
+
+module.exports = {
+  default: Vec,
+  Vec3,
+  Vec2
+}
 
 class Vector3 {
   constructor(x = 0, y = 0, z = 0) {

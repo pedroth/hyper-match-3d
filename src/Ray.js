@@ -1,4 +1,4 @@
-export default function Ray(init, dir) {
+function Ray(init, dir) {
     const ans = {};
     ans.init = init;
     ans.dir = dir;
@@ -6,3 +6,5 @@ export default function Ray(init, dir) {
     ans.dirInv = dir.map(x => 1 / x);
     return ans;
 }
+
+module.exports = Ray;

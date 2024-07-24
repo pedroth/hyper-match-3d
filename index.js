@@ -1,18 +1,18 @@
-import os from "node:os";
-import Scene from "./src/Scene.js";
-import Image from "./src/Image.js";
-import Camera from "./src/Camera.js";
-import Window from "./src/Window.js";
-import { readFileSync } from "node:fs";
-import Manifold from "./src/Manifold.js";
-import { Vec2, Vec3 } from "./src/Vector.js";
-import { Worker } from "node:worker_threads";
-import { rayTrace, renderBackground, traceWithCache } from "./src/RayTrace.js";
-import { arrayEquals, clamp, loop, memoize } from "./src/Utils.js";
-import { GOLDEN_RATIO, MAX_CAMERA_RADIUS, MOUSE_WHEEL_FORCE } from "./src/Constants.js";
-import { playSoundLoop } from "./src/Music.js";
-import { imageFromString } from "./src/Fonts.js";
-import Box from "./src/Box.js";
+const os = require('node:os');
+const {default: Camera} = require('./src/Camera.js');
+const Image = require('./src/Image.js');
+const Scene = require('./src/Scene.js');
+const Window = require('./src/Window.js');
+const { readFileSync } = require('node:fs');
+const Manifold = require('./src/Manifold.js');
+const { Vec2, Vec3 } = require('./src/Vector.js');
+const { Worker } = require('node:worker_threads');
+const { rayTrace, renderBackground, traceWithCache } = require('./src/RayTrace.js');
+const { arrayEquals, clamp, loop, memoize } = require('./src/Utils.js');
+const { GOLDEN_RATIO, MAX_CAMERA_RADIUS, MOUSE_WHEEL_FORCE } = require('./src/Constants.js');
+const { playSoundLoop } = require('./src/Music.js');
+const { imageFromString } = require('./src/Fonts.js');
+const Box = require('./src/Box.js');
 
 //========================================================================================
 /*                                                                                      *
@@ -24,7 +24,7 @@ let neighbors = [];
 let selectedIndex = 0;
 let selectedObjects = [];
 let vertexMatched = 0;
-const percentageToWin = 0.1;
+const percentageToWin = 0.01;
 let totalVertices = undefined;
 let vertex2Win = undefined;
 let finalTime = 0;

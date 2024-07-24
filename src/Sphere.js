@@ -1,7 +1,8 @@
-import Box from "./Box.js";
-import { Diffuse, Metallic } from "./Material.js";
-import { randomPointInSphere } from "./Utils.js";
-import Vec from "./Vector.js";
+const Box = require('./Box.js');
+const { Diffuse, Metallic } = require('./Material.js');
+const { randomPointInSphere } = require('./Utils.js');
+const {default: Vec} = require('./Vector.js');
+
 
 class Sphere {
     constructor(position, radius, props = {}) {
@@ -98,4 +99,4 @@ function sphereInterception(point, ray) {
     return t1 >= 0 && t2 >= 0 ? t : undefined;
 }
 
-export default Sphere;
+module.exports = Sphere;

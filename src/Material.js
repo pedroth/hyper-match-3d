@@ -1,7 +1,7 @@
-import Ray from "./Ray.js"
-import { randomPointInSphere } from "./Utils.js";
+const Ray = require('./Ray.js');
+const { randomPointInSphere } = require('./Utils.js');
 
-export function Diffuse() {
+function Diffuse() {
     return {
         scatter(inRay, point, element) {
             const normal = element.normalToPoint(point);
@@ -12,7 +12,7 @@ export function Diffuse() {
     }
 }
 
-export function Metallic(fuzz = 0) {
+function Metallic(fuzz = 0) {
     return {
         scatter(inRay, point, element) {
             fuzz = Math.min(1, Math.max(0, fuzz));
@@ -25,7 +25,7 @@ export function Metallic(fuzz = 0) {
     }
 }
 
-export function Alpha(alpha = 1) {
+function Alpha(alpha = 1) {
     return {
         scatter(inRay, point, element) {
             if (Math.random() <= alpha) return Diffuse().scatter(inRay, point, element);
@@ -39,7 +39,7 @@ export function Alpha(alpha = 1) {
     }
 }
 
-export function DiElectric(indexOfRefraction = 1.0) {
+function DiElectric(indexOfRefraction = 1.0) {
     return {
         scatter(inRay, point, element) {
             const p = point.sub(inRay.init);
@@ -69,4 +69,11 @@ export function DiElectric(indexOfRefraction = 1.0) {
             return Ray(inRay.trace(t + 1e-2), vOut);
         }
     }
+}
+
+module.exports = {
+    Diffuse,
+    Metallic,
+    Alpha,
+    DiElectric
 }

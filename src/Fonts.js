@@ -1,6 +1,6 @@
-import Box from "./Box.js";
-import Image from "./Image.js";
-import { Vec2 } from "./Vector.js";
+const Box = require('./Box.js');
+const Image = require('./Image.js');
+const { Vec2 } = require('./Vector.js');
 
 const gridX = 3;
 const gridY = 13;
@@ -70,7 +70,7 @@ fontMap = Object.entries(fontMap)
 
 
 
-export const imageFromString = (string) => {
+const imageFromString = (string) => {
     const chars = [...string].map(x => x.toLowerCase());
     const ans = {};
     /**
@@ -91,4 +91,8 @@ export const imageFromString = (string) => {
             [1 - color[0], 1 - color[1], 1 - color[2], 1];
     }
     return ans;
+}
+
+module.exports = {
+    imageFromString
 }

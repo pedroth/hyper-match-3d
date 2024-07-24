@@ -1,6 +1,14 @@
-export const MAX_8BIT = 255;
-export const RAD2DEG = 180 / Math.PI;
+const MAX_8BIT = 255;
+const RAD2DEG = 180 / Math.PI;
 
-export const MAX_CAMERA_RADIUS = 2;
-export const GOLDEN_RATIO = 1.618033988749;
-export const MOUSE_WHEEL_FORCE = 0.05;
+const MAX_CAMERA_RADIUS = 2;
+const GOLDEN_RATIO = 1.618033988749;
+const MOUSE_WHEEL_FORCE = 0.05;
+
+module.exports = {
+  MAX_8BIT,
+  RAD2DEG,
+  MAX_CAMERA_RADIUS,
+  GOLDEN_RATIO,
+  MOUSE_WHEEL_FORCE
+};

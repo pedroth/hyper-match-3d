@@ -1,10 +1,9 @@
-import Graph from "./Graph.js";
-import { Diffuse } from "./Material.js";
-import Scene from "./Scene.js";
-import Sphere from "./Sphere.js";
-import { groupBy } from "./Utils.js";
-import { Vec3 } from "./Vector.js";
-
+const Graph = require('./Graph.js');
+const { Diffuse } = require('./Material.js');
+const Scene = require('./Scene.js');
+const Sphere = require('./Sphere.js');
+const { groupBy } = require('./Utils.js');
+const { Vec3 } = require('./Vector.js');
 
 //========================================================================================
 /*                                                                                      *
@@ -32,7 +31,7 @@ const GAME_COLORS_KEY_INDEXES = Object.keys(GAME_COLORS).map((_, i) => i);
  *                                                                                      */
 //========================================================================================
 
-export default class Manifold {
+class Manifold {
     constructor({ name, vertices, faces }) {
         this.name = name ?? `Manifold_${MANIFOLD_COUNTER++}`;
         this.props = { name: this.name }
@@ -130,6 +129,8 @@ export default class Manifold {
         return new Manifold({ name, vertices, faces })
     }
 }
+
+module.exports = Manifold;
 
 //========================================================================================
 /*                                                                                      *

@@ -1,8 +1,9 @@
-import Ray from "./Ray.js";
-import { renderBackground } from "./RayTrace.js";
-import Vec, { Vec2, Vec3 } from "./Vector.js";
+const Ray = require('./Ray.js');
+const { renderBackground } = require('./RayTrace.js');
 
-export default class Camera {
+const { default: Vec, Vec2, Vec3 } = require('./Vector.js');
+
+class Camera {
   constructor(props = {}) {
     const { lookAt, distanceToPlane, position, orientCoords, orbitCoords } = props;
     this.lookAt = lookAt ?? Vec3(0, 0, 0);
@@ -190,6 +191,8 @@ export default class Camera {
   }
 }
 
+module.exports = {default: Camera};
+
 
 function rasterSphere({ sphere, canvas, zBuffer, camera }) {
   const w = canvas.width;
@@ -219,7 +222,7 @@ function rasterSphere({ sphere, canvas, zBuffer, camera }) {
       const xl = Math.max(0, Math.min(w - 1, x + k));
       const yl = Math.floor(y + l);
       const squareLength = k * k + l * l;
-      if(squareLength > intRadiusSquared) continue;
+      if (squareLength > intRadiusSquared) continue;
       const [i, j] = canvas.canvas2grid(xl, yl);
       const zBufferIndex = Math.floor(w * i + j);
       if (z < zBuffer[zBufferIndex]) {

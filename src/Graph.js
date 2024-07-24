@@ -1,4 +1,4 @@
-export default class Graph {
+class Graph {
     constructor() {
         this.vertices = {}; // vertices map<id, vertex>
         this.vertexNeigh = {}; // neighbor map<id, map<id, bool>>
@@ -66,6 +66,8 @@ export default class Graph {
         return this;
     }
 }
+
+module.exports = Graph;
 
 function edgeKey(i, j) {
     return `${i}_${j}`

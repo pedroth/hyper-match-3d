@@ -1,12 +1,12 @@
-import sdl from '@kmamal/sdl';
-import { readFileSync } from "node:fs";
+const sdl = require('@kmamal/sdl');
+const { readFileSync } = require('fs');
 
 /**
  * play sounds in special wav format:
  * 
  * ffmpeg -i <input audio file> -ac 1 -ar 48000 -f f32le -c:a pcm_f32le <output audio file>
  */
-export function playSound(file) {
+function playSound(file) {
     const channels = 1;
     const frequency = 48e3;
     const audioInstance = sdl
@@ -23,7 +23,7 @@ export function playSound(file) {
     audioInstance.play();
 }
 
-export function playSoundLoop(file) {
+function playSoundLoop(file) {
     const channels = 1;
     const frequency = 48e3;
     const audioInstance = sdl
@@ -53,4 +53,9 @@ export function playSoundLoop(file) {
         clearInterval(id);
     };
     return ans;
+}
+
+module.exports = {
+    playSound,
+    playSoundLoop
 }

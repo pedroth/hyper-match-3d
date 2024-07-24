@@ -1,7 +1,7 @@
 /**
  * Priority Queue implemented as a min priority queue, although it can be made max priority queue(using the proper comparator).
  */
-export default class PQueue {
+class PQueue {
     constructor(comparator = (a, b) => a - b) {
         this.data = [];
         this.comparator = comparator;
@@ -54,6 +54,7 @@ export default class PQueue {
     }
 }
 
+module.exports = PQueue;
 
 function heapifyBuilder(data, comparator) {
     return rootIndex => {
