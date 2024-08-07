@@ -439,7 +439,7 @@ const loopControl = loop(async (dt, time) => {
     if (gameState === GAME_STATES.END) {
         renderEndScreen(scoreFunc(vertexMatched / vertex2Win, finalTime))();
     }
-    window.setTitle(`HyperMatch 3D |FPS: ${Math.floor(1 / dt)}`);
+    // window.setTitle(`HyperMatch 3D |FPS: ${Math.floor(1 / dt)}`);
 }).play();
 
 
