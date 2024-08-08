@@ -8,5 +8,11 @@
   "trustedDependencies": [
     "@kmamal/sdl"
   ],
+  "scripts": {
+    "start": "node index.js",
+    "start_docker": "node index.docker.js",
+    "build_docker": "docker build -t hypermatch3d .",
+    "docker_run": "xhost + && sudo docker run --rm -v /tmp/.X11-unix:/tmp/.X11-unix:ro -e DISPLAY=$DISPLAY hypermatch3d"
+  },
   "devDependencies": {}
 }

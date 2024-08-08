@@ -19,6 +19,7 @@ HyperMatch 3D game, is a manifold match 3 game, where you switch sphere position
 - [ ] Create web version
 - [ ] Better network generation
 - [ ] Create executable (not possible)
+- [X] Create executable with [dockerc](https://github.com/NilsIrl/dockerc)
 - [ ] Improve performance
 - [ ] Select difficulty level (?)
 
@@ -33,9 +34,27 @@ Clone project and install dependencies:
 Run it:
 `node index.js`. As of 2024, `bun` is not working properly.
 
+# Running using docker
+
+Just need to run:
+- `npm run build_docker`
+- `npm run docker_run`
+
+## Creating an executable from docker
+
+First you need to build the docker image using `npm run build_docker`, then run `dockerc`:
+
+- `sudo ~/<localization>/dockerc --image docker-daemon:hypermatch3d:latest --output hypermatch3d`
+
+Then to run executable you need to pass some parameters:
+
+`xhost + && sudo ./hypermatch3d -v /tmp/.X11-unix:/tmp/.X11-unix:ro -e DISPLAY=$DISPLAY`
+
 ## Major problems
 
 - As of 2024, is not possible to create a single executable application(SEA) with node and [es6 imports](https://github.com/nodejs/single-executable/discussions/84)
 
 - Also the software render is pretty slow, even when using multi-threading achieving a range of 3 to 8 fps.
+
+
 
