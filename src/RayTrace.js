@@ -1,5 +1,5 @@
 import Ray from "./Ray.js";
-import { clamp } from "./Utils.js";
+import { clamp, randomPointInSphere } from "./Utils.js";
 
 const clampAcos = clamp(-1, 1);
 
@@ -159,4 +159,52 @@ export function debugCache(ray, scene, options) {
     ];
     cache.set(p, finalColor);
     return [0, 0, 1];
+}
+
+export function simpleRayTrace(ray, scene) {
+    const hit = scene.interceptWithRay(ray);
+    if (!hit) return renderBackground(ray, backgroundImage);
+    const [, , e] = hit;
+    return e.props?.color ?? [0, 0, 0]
+}
+
+
+export function rayTraceBlur(ray, scene, options) {
+    const { bounces, selectedObjects, backgroundImage, neighbors, blurSize = 0.1, step = 0, focalD = 0.5, centerRayDir } = options;
+    if (bounces < 0) return [0, 0, 0];
+    // if(selectedObjects.length > 0) console.log(`Distance2Selected: ${selectedObjects[0].position.sub(ray.init).length()}, focalD: ${focalD}`)
+    const focalDistance = selectedObjects.length > 0 ? selectedObjects[0].position.sub(ray.init).length() : focalD;
+    const endP = ray.init.add(ray.dir.scale(focalDistance / centerRayDir.dot(ray.dir)));
+    const delta = randomPointInSphere(3).scale(Math.random() * blurSize);
+    const deltaProj = delta.sub(centerRayDir.scale(delta.dot(centerRayDir)));
+    const newInit = step === 0 ? ray.init.add(deltaProj) : ray.init;
+    const newRay = Ray(newInit, endP.sub(newInit).normalize());
+    const hit = scene.interceptWithRay(newRay);
+    if (!hit) return renderBackground(newRay, backgroundImage);
+    const [, p, e] = hit;
+    if (Math.random() < 0.9 && step === 0) {
+        const distanceToFocalPlane = centerRayDir.dot(p.sub(ray.init))
+        if (Math.abs(distanceToFocalPlane - focalDistance) > 1e-1) {
+            return [Math.random(), Math.random(), Math.random()];
+        }
+    }
+    const color = e.props?.color ?? [0, 0, 0];
+    if (selectedObjects.some(s => s.props.name === e.props.name)) {
+        return selectShader(newRay, hit);
+    }
+    if (neighbors.some(s => s.props.name === e.props.name)) {
+        return color
+    };
+    const mat = e.props?.material ?? Diffuse();
+    const r = mat.scatter(newRay, p, e);
+    const finalC = rayTrace(
+        r,
+        scene,
+        { bounces: bounces - 1, selectedObjects, backgroundImage, neighbors, blurSize, step: step + 1 }
+    );
+    return [
+        finalC[0] + finalC[0] * color[0],
+        finalC[1] + finalC[1] * color[1],
+        finalC[2] + finalC[2] * color[2],
+    ];
 }
