@@ -1,7 +1,7 @@
 import Box from "./Box.js";
 import { MAX_8BIT } from "./Constants.js";
 import { Vec2 } from "./Vector.js";
-import { clamp, mod } from "./Utils.js";
+import { CHANNELS, clamp, mod } from "./Utils.js";
 import { unlinkSync, readFileSync } from "fs";
 import { execSync } from "child_process";
 
@@ -13,7 +13,7 @@ export default class Image {
     constructor(width, height) {
         this._width = width;
         this._height = height;
-        this._image = new Float32Array(this._width * this._height * 4);
+        this._image = new Float32Array(this._width * this._height * CHANNELS);
         this.box = new Box(Vec2(0, 0), Vec2(this._width, this._height))
     }
 
@@ -37,9 +37,9 @@ export default class Image {
         const n = this._image.length;
         const w = this._width;
         const h = this._height;
-        for (let k = 0; k < n; k += 4) {
-            const i = Math.floor(k / (4 * w));
-            const j = Math.floor((k / 4) % w);
+        for (let k = 0; k < n; k += CHANNELS) {
+            const i = Math.floor(k / (CHANNELS * w));
+            const j = Math.floor((k / CHANNELS) % w);
             const x = j;
             const y = h - 1 - i;
             const color = lambda(x, y);
@@ -62,7 +62,7 @@ export default class Image {
     setPxl(x, y, color) {
         const w = this._width;
         const [i, j] = this.canvas2grid(x, y);
-        let index = 4 * (w * i + j);
+        let index = CHANNELS * (w * i + j);
         this._image[index] = color[0];
         this._image[index + 1] = color[1];
         this._image[index + 2] = color[2];
@@ -76,7 +76,7 @@ export default class Image {
         let [i, j] = this.canvas2grid(x, y);
         i = mod(i, h);
         j = mod(j, w);
-        let index = 4 * (w * i + j);
+        let index = CHANNELS * (w * i + j);
         return [
             this._image[index],
             this._image[index + 1],
@@ -147,9 +147,9 @@ export default class Image {
             const n = this._image.length;
             const w = this._width;
             const h = this._height;
-            for (let k = 0; k < n; k += 4) {
-                const i = Math.floor(k / (4 * w));
-                const j = Math.floor((k / 4) % w);
+            for (let k = 0; k < n; k += CHANNELS) {
+                const i = Math.floor(k / (CHANNELS * w));
+                const j = Math.floor((k / CHANNELS) % w);
                 const x = j;
                 const y = h - 1 - i;
                 const color = lambda(x, y);
@@ -166,9 +166,9 @@ export default class Image {
     }
 
     toArray() {
-        const imageData = new Uint8Array(this._width * this._height * 4);
+        const imageData = new Uint8Array(this._width * this._height * CHANNELS);
         const n = this._image.length;
-        for (let k = 0; k < n; k += 4) {
+        for (let k = 0; k < n; k += CHANNELS) {
             imageData[k] = clamp01(this._image[k]) * MAX_8BIT;
             imageData[k + 1] = clamp01(this._image[k + 1]) * MAX_8BIT;
             imageData[k + 2] = clamp01(this._image[k + 2]) * MAX_8BIT;

@@ -8,7 +8,7 @@ import Manifold from "./src/Manifold.js";
 import { Vec2, Vec3 } from "./src/Vector.js";
 import { Worker } from "node:worker_threads";
 import { rayTrace, renderBackground, traceWithCache } from "./src/RayTrace.js";
-import { arrayEquals, clamp, loop, memoize } from "./src/Utils.js";
+import { arrayEquals, CHANNELS, clamp, loop, memoize } from "./src/Utils.js";
 import { GOLDEN_RATIO, MAX_CAMERA_RADIUS, MOUSE_WHEEL_FORCE } from "./src/Constants.js";
 import { playSoundLoop } from "./src/Music.js";
 import { imageFromString } from "./src/Fonts.js";
@@ -201,9 +201,9 @@ function renderGameParallel(canvas) {
                     worker.on("message", message => {
                         const { image, startRow, endRow, } = message;
                         let index = 0;
-                        const startIndex = 4 * w * startRow;
-                        const endIndex = 4 * w * endRow;
-                        for (let i = startIndex; i < endIndex; i += 4) {
+                        const startIndex = CHANNELS * w * startRow;
+                        const endIndex = CHANNELS * w * endRow;
+                        for (let i = startIndex; i < endIndex; i += CHANNELS) {
                             canvas.setPxlData(i, [image[index++], image[index++], image[index++]]);
                             index++;
                         }

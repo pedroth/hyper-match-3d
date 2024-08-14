@@ -111,3 +111,5 @@ export function arrayEquals(a, b) {
     }
     return true;
 }
+
+export const CHANNELS = 4;

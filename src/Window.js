@@ -2,7 +2,7 @@ import sdl from "@kmamal/sdl"
 import Box from "./Box.js";
 import { Vec2 } from "./Vector.js";
 import { MAX_8BIT } from "./Constants.js";
-import { clamp, memoize } from "./Utils.js";
+import { CHANNELS, clamp, memoize } from "./Utils.js";
 import os from 'node:os';
 import { Worker } from "node:worker_threads";
 
@@ -15,7 +15,7 @@ export default class Window {
         this._height = height;
         this._title = title;
         this._window = sdl.video.createWindow({ title, resizable: true });
-        this._image = new Float32Array(this._width * this._height * 4);
+        this._image = new Float32Array(this._width * this._height * CHANNELS);
         this.box = new Box(Vec2(0, 0), Vec2(this._width, this._height));
         this._eventHandlers = {};
     }
@@ -35,13 +35,13 @@ export default class Window {
     }
 
     setSize(w, h) {
-        const newImage = new Float32Array(w * h * 4);
-        // for (let k = 0; k < newImage.length; k += 4) {
-        //     const i = Math.floor(k / (4 * w));
-        //     const j = Math.floor((k / 4) % w);
+        const newImage = new Float32Array(w * h * CHANNELS);
+        // for (let k = 0; k < newImage.length; k += CHANNELS) {
+        //     const i = Math.floor(k / (CHANNELS * w));
+        //     const j = Math.floor((k / CHANNELS) % w);
         //     const iOrig = (i / w) * this._width;
         //     const jOrig = (j / h) * this._height;
-        //     const index = 4 * (this._width * iOrig + jOrig);
+        //     const index = CHANNELS * (this._width * iOrig + jOrig);
         //     newImage[k] = this._image[index];
         //     newImage[k + 1] = this._image[index + 1];
         //     newImage[k + 2] = this._image[index + 2];
@@ -68,7 +68,7 @@ export default class Window {
     paint() {
         const buffer = Buffer.allocUnsafe(this._image.length);
         buffer.set(this._image.map(x => clamp01(x) * MAX_8BIT));
-        this._window.render(this._width, this._height, this._width * 4, 'rgba32', buffer);
+        this._window.render(this._width, this._height, this._width * CHANNELS, 'rgba32', buffer);
         return this;
     }
 
@@ -79,9 +79,9 @@ export default class Window {
         const n = this._image.length;
         const w = this._width;
         const h = this._height;
-        for (let k = 0; k < n; k += 4) {
-            const i = Math.floor(k / (4 * w));
-            const j = Math.floor((k / 4) % w);
+        for (let k = 0; k < n; k += CHANNELS) {
+            const i = Math.floor(k / (CHANNELS * w));
+            const j = Math.floor((k / CHANNELS) % w);
             const x = j;
             const y = h - 1 - i;
             const color = lambda(x, y);
@@ -116,13 +116,13 @@ export default class Window {
         const w = this._width;
         const h = this._height;
         const fun = ({ _start_row, _end_row, _width_, _height_, _worker_id_, _vars_ }) => {
-            const image = new Float32Array(4 * _width_ * (_end_row - _start_row));
-            const startIndex = 4 * _width_ * _start_row;
-            const endIndex = 4 * _width_ * _end_row;
+            const image = new Float32Array(CHANNELS * _width_ * (_end_row - _start_row));
+            const startIndex = CHANNELS * _width_ * _start_row;
+            const endIndex = CHANNELS * _width_ * _end_row;
             let index = 0;
-            for (let k = startIndex; k < endIndex; k += 4) {
-                const i = Math.floor(k / (4 * _width_));
-                const j = Math.floor((k / 4) % _width_);
+            for (let k = startIndex; k < endIndex; k += CHANNELS) {
+                const i = Math.floor(k / (CHANNELS * _width_));
+                const j = Math.floor((k / CHANNELS) % _width_);
                 const x = j;
                 const y = _height_ - 1 - i;
                 const color = lambda(x, y, { ..._vars_ });
@@ -132,7 +132,7 @@ export default class Window {
                 image[index + 1] = green;
                 image[index + 2] = blue;
                 image[index + 3] = 1;
-                index += 4;
+                index += CHANNELS;
             }
             return { image, _start_row, _end_row, _worker_id_ };
         }
@@ -146,8 +146,8 @@ export default class Window {
                             worker.on("message", (message) => {
                                 const { image, _start_row, _end_row, _worker_id_ } = message;
                                 let index = 0;
-                                const startIndex = 4 * w * _start_row;
-                                const endIndex = 4 * w * _end_row;
+                                const startIndex = CHANNELS * w * _start_row;
+                                const endIndex = CHANNELS * w * _end_row;
                                 for (let i = startIndex; i < endIndex; i++) {
                                     this._image[i] = image[index];
                                     index++;
@@ -176,7 +176,7 @@ export default class Window {
     fill(color) {
         if (!color) return;
         const n = this._image.length;
-        for (let k = 0; k < n; k += 4) {
+        for (let k = 0; k < n; k += CHANNELS) {
             this._image[k] = color[0];
             this._image[k + 1] = color[1];
             this._image[k + 2] = color[2];
@@ -224,7 +224,7 @@ export default class Window {
         let [i, j] = this.canvas2grid(x, y);
         i = mod(i, h);
         j = mod(j, w);
-        const index = 4 * (w * i + j);
+        const index = CHANNELS * (w * i + j);
         return [
             this._image[index],
             this._image[index + 1],
@@ -236,7 +236,7 @@ export default class Window {
     setPxl(x, y, color) {
         const w = this._width;
         const [i, j] = this.canvas2grid(x, y);
-        const index = 4 * (w * i + j);
+        const index = CHANNELS * (w * i + j);
         this._image[index] = color[0];
         this._image[index + 1] = color[1];
         this._image[index + 2] = color[2];
@@ -287,9 +287,9 @@ export default class Window {
             const n = this._image.length;
             const w = this._width;
             const h = this._height;
-            for (let k = 0; k < n; k += 4) {
-                const i = Math.floor(k / (4 * w));
-                const j = Math.floor((k / 4) % w);
+            for (let k = 0; k < n; k += CHANNELS) {
+                const i = Math.floor(k / (CHANNELS * w));
+                const j = Math.floor((k / CHANNELS) % w);
                 const x = j;
                 const y = h - 1 - i;
                 const color = lambda(x, y);

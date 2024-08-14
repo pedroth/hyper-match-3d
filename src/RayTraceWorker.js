@@ -4,6 +4,7 @@ import { debugCache, rayTrace, traceWithCache } from "./RayTrace.js";
 import Scene from "./Scene.js"
 import Sphere from "./Sphere.js";
 import { parentPort } from "node:worker_threads";
+import { CHANNELS } from "./Utils.js";
 
 let scene; 
 let backgroundImage;
@@ -32,7 +33,7 @@ function main(inputs) {
     const rayGen = camera.rayFromImage(width, height);
     const selectedObjects = serializedSelectedObjects.map(x => Sphere.deserialize(x));
     const neighbors = serializedNeighbors.map(x => Sphere.deserialize(x));
-    const bufferSize = width * (endRow - startRow + 1) * 4;
+    const bufferSize = width * (endRow - startRow + 1) * CHANNELS;
     const image = new Float32Array(bufferSize);
     const bounces = params.bounces;
     let index = 0;
