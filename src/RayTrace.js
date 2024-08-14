@@ -182,12 +182,12 @@ export function rayTraceBlur(ray, scene, options) {
     const hit = scene.interceptWithRay(newRay);
     if (!hit) return renderBackground(newRay, backgroundImage);
     const [, p, e] = hit;
-    if (Math.random() < 0.9 && step === 0) {
-        const distanceToFocalPlane = centerRayDir.dot(p.sub(ray.init))
-        if (Math.abs(distanceToFocalPlane - focalDistance) > 1e-1) {
-            return [Math.random(), Math.random(), Math.random()];
-        }
-    }
+    // if (Math.random() < 0.9 && step === 0) {
+    //     const distanceToFocalPlane = centerRayDir.dot(p.sub(ray.init))
+    //     if (Math.abs(distanceToFocalPlane - focalDistance) > 1e-1) {
+    //         return [Math.random(), Math.random(), Math.random()];
+    //     }
+    // }
     const color = e.props?.color ?? [0, 0, 0];
     if (selectedObjects.some(s => s.props.name === e.props.name)) {
         return selectShader(newRay, hit);
