@@ -215,7 +215,7 @@ function renderGameParallel(canvas) {
                         height: h,
                         params: { bounces: 1 },
                         startRow: k * ratio,
-                        endRow: Math.min(h - 1, (k + 1) * ratio),
+                        endRow: Math.min(h, (k + 1) * ratio),
                         camera: camera.serialize(),
                         selectedObjects: selectedObjects.map(x => x.serialize()),
                         neighbors: neighbors.map(x => x.serialize()),
