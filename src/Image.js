@@ -1,13 +1,13 @@
+import os from 'node:os';
 import Box from "./Box.js";
-import { MAX_8BIT } from "./Constants.js";
 import { Vec2 } from "./Vector.js";
-import { CHANNELS, clamp, mod } from "./Utils.js";
-import { unlinkSync, readFileSync } from "fs";
 import { execSync } from "child_process";
+import { MAX_8BIT } from "./Constants.js";
+import { Worker } from "node:worker_threads";
+import { unlinkSync, readFileSync } from "fs";
+import { CHANNELS, clamp, mod, memoize } from "./Utils.js";
 
 const clamp01 = clamp();
-
-
 export default class Image {
 
     constructor(width, height) {
@@ -31,43 +31,17 @@ export default class Image {
     }
 
     /**
-    * lambda: (x: Number, y: Number) => [r,g,b] 
+    * color: Color 
     */
-    map(lambda) {
+    fill(color) {
+        if (!color) return;
         const n = this._image.length;
-        const w = this._width;
-        const h = this._height;
         for (let k = 0; k < n; k += CHANNELS) {
-            const i = Math.floor(k / (CHANNELS * w));
-            const j = Math.floor((k / CHANNELS) % w);
-            const x = j;
-            const y = h - 1 - i;
-            const color = lambda(x, y);
-            if (!color) return;
             this._image[k] = color[0];
             this._image[k + 1] = color[1];
             this._image[k + 2] = color[2];
             this._image[k + 3] = 1;
         }
-        return this.paint();
-    }
-
-    /**
-     * color: Color 
-     */
-    fill(color) {
-        return this.map(() => color);
-    }
-
-    setPxl(x, y, color) {
-        const w = this._width;
-        const [i, j] = this.canvas2grid(x, y);
-        let index = CHANNELS * (w * i + j);
-        this._image[index] = color[0];
-        this._image[index + 1] = color[1];
-        this._image[index + 2] = color[2];
-        this._image[index + 3] = 1;
-        return this;
     }
 
     getPxl(x, y) {
@@ -84,6 +58,124 @@ export default class Image {
             this._image[index + 3]
         ];
     }
+
+    setPxl(x, y, color) {
+        const w = this._width;
+        const [i, j] = this.canvas2grid(x, y);
+        let index = CHANNELS * (w * i + j);
+        this._image[index] = color[0];
+        this._image[index + 1] = color[1];
+        this._image[index + 2] = color[2];
+        this._image[index + 3] = 1;
+        return this;
+    }
+
+    setPxlData(index, [r, g, b]) {
+        this._image[index] = r;
+        this._image[index + 1] = g;
+        this._image[index + 2] = b;
+        this._image[index + 3] = 1.0;
+        return this;
+    }
+
+    /**
+    * lambda: (x: Number, y: Number) => [r,g,b] 
+    * paint: boolean
+    */
+    map(lambda, paint = true) {
+        const n = this._image.length;
+        const w = this._width;
+        const h = this._height;
+        for (let k = 0; k < n; k += CHANNELS) {
+            const i = Math.floor(k / (CHANNELS * w));
+            const j = Math.floor((k / CHANNELS) % w);
+            const x = j;
+            const y = h - 1 - i;
+            const color = lambda(x, y);
+            if (!color) continue;
+            this._image[k] = color[0];
+            this._image[k + 1] = color[1];
+            this._image[k + 2] = color[2];
+            this._image[k + 3] = 1;
+        }
+        if (paint) return this.paint();
+        return this;
+    }
+
+    mapBox = (lambda, box, paint = true) => {
+        const init = box.min;
+        const end = box.max;
+        const w = box.diagonal.x;
+        const h = box.diagonal.y;
+        for (let x = init.x; x < end.x; x++) {
+            for (let y = init.y; y < end.y; y++) {
+                const color = lambda(x - init.x, y - init.y);
+                if (!color) continue;
+                this.setPxl(x, y, color);
+            }
+        }
+        if (paint) return this.paint();
+        return this;
+    }
+
+    mapParallel = memoize((lambda, dependencies = []) => {
+        const N = os.cpus().length;
+        const w = this._width;
+        const h = this._height;
+        const fun = ({ _start_row, _end_row, _width_, _height_, _worker_id_, _vars_ }) => {
+            const image = new Float32Array(CHANNELS * _width_ * (_end_row - _start_row));
+            const startIndex = CHANNELS * _width_ * _start_row;
+            const endIndex = CHANNELS * _width_ * _end_row;
+            let index = 0;
+            for (let k = startIndex; k < endIndex; k += CHANNELS) {
+                const i = Math.floor(k / (CHANNELS * _width_));
+                const j = Math.floor((k / CHANNELS) % _width_);
+                const x = j;
+                const y = _height_ - 1 - i;
+                const color = lambda(x, y, { ..._vars_ });
+                if (!color) continue;
+                const [red, green, blue] = color;
+                image[index] = red;
+                image[index + 1] = green;
+                image[index + 2] = blue;
+                image[index + 3] = 1;
+                index += CHANNELS;
+            }
+            return { image, _start_row, _end_row, _worker_id_ };
+        }
+        const workers = [...Array(N)].map(() => createWorker(fun, lambda, dependencies));
+        return {
+            run: (vars = {}) => {
+                return Promise
+                    .all(workers.map((worker, k) => {
+                        return new Promise((resolve) => {
+                            worker.removeAllListeners('message');
+                            worker.on("message", (message) => {
+                                const { image, _start_row, _end_row, _worker_id_ } = message;
+                                let index = 0;
+                                const startIndex = CHANNELS * w * _start_row;
+                                const endIndex = CHANNELS * w * _end_row;
+                                for (let i = startIndex; i < endIndex; i++) {
+                                    this._image[i] = image[index];
+                                    index++;
+                                }
+                                return resolve();
+                            });
+                            const ratio = Math.floor(h / N);
+                            worker.postMessage({
+                                _start_row: k * ratio,
+                                _end_row: Math.min(h - 1, (k + 1) * ratio),
+                                _width_: w,
+                                _height_: h,
+                                _worker_id_: k,
+                                _vars_: vars
+                            });
+                        })
+                    }))
+                    .then(() => this.paint());
+            }
+        }
+    });
 
     drawLine(p1, p2, shader) {
         const w = this._width;
@@ -135,7 +227,7 @@ export default class Image {
     exposure(time = Number.MAX_VALUE) {
         let it = 1;
         const ans = {};
-        for (let key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
+        for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
             const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this), key);
             if (descriptor && typeof descriptor.value === 'function') {
                 ans[key] = descriptor.value.bind(this);
@@ -143,7 +235,7 @@ export default class Image {
         }
         ans.width = this.width;
         ans.height = this.height;
-        ans.map = (lambda) => {
+        ans.map = (lambda, paint = true) => {
             const n = this._image.length;
             const w = this._width;
             const h = this._height;
@@ -154,11 +246,24 @@ export default class Image {
                 const y = h - 1 - i;
                 const color = lambda(x, y);
                 if (!color) continue;
-                this._image[k] = this._image[k] + (color.red - this._image[k]) / it;
-                this._image[k + 1] = this._image[k + 1] + (color.green - this._image[k + 1]) / it;
-                this._image[k + 2] = this._image[k + 2] + (color.blue - this._image[k + 2]) / it;
-                this._image[k + 3] = 1;
+                this._image[k] = this._image[k] + (color[0] - this._image[k]) / it;
+                this._image[k + 1] = this._image[k + 1] + (color[1] - this._image[k + 1]) / it;
+                this._image[k + 2] = this._image[k + 2] + (color[2] - this._image[k + 2]) / it;
+                this._image[k + 3] = 1.0;
             }
+            if (paint) return ans.paint();
+            return ans;
+        }
+
+        ans.setPxlData = (index, [r, g, b]) => {
+            this._image[index] = this._image[index] + (r - this._image[index]) / it;
+            this._image[index + 1] = this._image[index + 1] + (g - this._image[index + 1]) / it;
+            this._image[index + 2] = this._image[index + 2] + (b - this._image[index + 2]) / it;
+            this._image[index + 3] = 1.0;
+            return ans;
+        }
+
+        ans.paint = () => {
             if (it < time) it++
             return this.paint();
         }
@@ -307,3 +412,20 @@ function parsePPM(data) {
     }
     return { width, height, maxColor, pixels };
 }
+
+
+const createWorker = (main, lambda, dependencies) => {
+    const workerFile = `
+    const { parentPort } = require("node:worker_threads");
+    const CHANNELS = ${CHANNELS};
+    ${dependencies.map(d => d.toString()).join("\n")}
+    const lambda = ${lambda.toString()};
+    const __main__ = ${main.toString()};
+    parentPort.on("message", message => {
+        const output = __main__(message);
+        parentPort.postMessage(output);
+    });
+    `;
+    const worker = new Worker(workerFile, { eval: true });
+    return worker;
+};
