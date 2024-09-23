@@ -2,6 +2,8 @@
 
 HyperMatch 3D game, is a manifold match 3 game, where you switch sphere positions so that a neighborhood of spheres are of the same color. Joining 3 spheres with the same color together will make them disappear. The goal of the game is to remove 10% of the spheres in the least time possible.
 
+![HyperMatch3D](/HyperMatch3D.webp)
+
 # Quick start
 
 - Git clone the repo: `git clone git@github.com:pedroth/hyper-match-3d.git`
@@ -64,6 +66,3 @@ First you need to build the docker image using `npm run build_docker`, then run 
 Then to run executable you need to pass some parameters:
 
 `xhost + && sudo ./hypermatch3d -v /tmp/.X11-unix:/tmp/.X11-unix:ro -e DISPLAY=$DISPLAY`
-
-
-
