@@ -1,5 +1,6 @@
 import sdl from '@kmamal/sdl';
 import { readFileSync } from "node:fs";
+import { Buffer } from "node:buffer";
 
 /**
  * play sounds in special wav format:

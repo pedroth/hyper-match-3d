@@ -1,10 +1,10 @@
 import os from 'node:os';
 import Box from "./Box.js";
 import { Vec2 } from "./Vector.js";
-import { execSync } from "child_process";
+import { execSync } from "node:child_process";
 import { MAX_8BIT } from "./Constants.js";
 import { Worker } from "node:worker_threads";
-import { unlinkSync, readFileSync } from "fs";
+import { unlinkSync, readFileSync } from "node:fs";
 import { CHANNELS, clamp, mod, memoize } from "./Utils.js";
 
 const clamp01 = clamp();

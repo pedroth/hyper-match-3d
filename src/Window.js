@@ -4,6 +4,7 @@ import { Vec2 } from "./Vector.js";
 import { MAX_8BIT } from "./Constants.js";
 import { CHANNELS, clamp,  } from "./Utils.js";
 import Image from "./Image.js";
+import { Buffer } from 'node:buffer';
 
 
 const clamp01 = clamp();
