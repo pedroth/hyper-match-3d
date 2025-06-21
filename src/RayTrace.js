@@ -75,12 +75,12 @@ const colorCache = (gridSpace, maxSamples = 1e5) => {
         const h = ans.hash(p);
         if (h in point2ColorMap) {
             const { color, samples } = point2ColorMap[h]
-            const newColor = [
-                color[0] + (c[0] - color[0]) / samples,
-                color[1] + (c[1] - color[1]) / samples,
-                color[2] + (c[2] - color[2]) / samples,
-            ]
             const newSamples = samples < maxSamples ? samples + 1 : samples;
+            const newColor = [
+                color[0] + (c[0] - color[0]) / newSamples,
+                color[1] + (c[1] - color[1]) / newSamples,
+                color[2] + (c[2] - color[2]) / newSamples,
+            ]
             point2ColorMap[h] = { color: newColor, samples: newSamples };
         } else {
             point2ColorMap[h] = { color: c, samples: 1 };
@@ -89,10 +89,7 @@ const colorCache = (gridSpace, maxSamples = 1e5) => {
     }
     ans.get = p => {
         const h = ans.hash(p);
-        const cachedObj = point2ColorMap[h];
-        if (!cachedObj) return undefined;
-        const { color } = cachedObj
-        return Math.random() < 0.5 ? color : undefined;
+        return Math.random() < 0.5 ? point2ColorMap?.[h]?.color : undefined;
     }
 
     return ans;
