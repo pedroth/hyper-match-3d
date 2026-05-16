@@ -1,6 +1,6 @@
 # HyperMatch 3D
 
-HyperMatch 3D game, is a manifold match 3 game, where you switch sphere positions so that a neighborhood of spheres are of the same color. Joining 3 spheres with the same color together will make them disappear. The goal of the game is to remove 10% of the spheres in the least time possible.
+HyperMatch 3D is a manifold match-3 game where you swap sphere positions so that neighboring spheres have the same color. Joining three spheres of the same color makes them disappear. The goal is to remove 10% of the spheres in the shortest time possible.
 
 ![HyperMatch3D](/HyperMatch3D.webp)
 
@@ -12,8 +12,8 @@ HyperMatch 3D game, is a manifold match 3 game, where you switch sphere position
 
 # Controls and gameplay
 
-- `left click` to select a sphere
-- `right click` to move the camera
+- `Left click` to select a sphere
+- `Right click` to move the camera
 
 By selecting two adjacent spheres, you can swap them. If three or more spheres of the same color are connected, they will be removed from the mesh.
 
