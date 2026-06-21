@@ -66,6 +66,12 @@ const canvas2ray = camera.rayFromImage(window.width, window.height);
 window.onMouseDown((x, y, e) => {
     if (e.button === Window.RIGHT_CLICK) rightClick = true;
     mouse = Vec2(x, y);
+    // if (gameState === GAME_STATES.START) {
+    //     if (!rightClick && startBtnBox.collidesWith(mouse)) {
+    //         gameState = GAME_STATES.LOOP;
+    //     }
+    //     return;
+    // }
     if (rightClick) return;
     exposedWindow = window.exposure();
     const hit = scene.interceptWithRay(canvas2ray(x, y))
@@ -349,6 +355,7 @@ function renderStartScreen(time) {
             let p = Vec2(x, y).div(Vec2(startBtnBox.diagonal.x, titleBox.diagonal.y));
             const c = startBtnImg.getPxl(p.x, p.y);
             if (startBtnBox.collidesWith(mouse)) {
+                console.log("mouse is over start button");
                 return c ? [0.9, 0.8, 0.1] : undefined
             } else {
                 return c ?
