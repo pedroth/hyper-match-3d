@@ -49,5 +49,8 @@ echo "==> Copying @kmamal/sdl JavaScript sources..."
 cp -r "$SDL_PKG/src"         "$OUT_DIR/$SDL_PKG/"
 cp    "$SDL_PKG/package.json" "$OUT_DIR/$SDL_PKG/"
 
+echo "==> Copying assets..."
+cp -r assets "$OUT_DIR/"
+
 echo "==> Done: $OUT_DIR/"
 echo "    Distribute the entire $OUT_DIR/ folder."
