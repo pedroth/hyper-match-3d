@@ -1,6 +1,6 @@
 {
   "name": "manifold-match-3",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "module": "index.js",
   "type": "module",
   "dependencies": {
