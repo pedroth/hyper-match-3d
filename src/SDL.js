@@ -11,6 +11,14 @@ const _req = createRequire(import.meta.url);
 
 const IS_BUN = typeof globalThis.Bun !== 'undefined';
 
+// Platform-specific SDL2 shared library names
+const _SDL_LIB = process.platform === 'win32' ? 'SDL2.dll'
+               : process.platform === 'darwin' ? 'libSDL2.dylib'
+               : 'libSDL2-2.0.so.0';
+const _SDL_LIB_ALT = process.platform === 'win32' ? null
+                   : process.platform === 'darwin' ? 'libSDL2-2.0.0.dylib'
+                   : 'libSDL2.so';
+
 const SDL_INIT_VIDEO              = 0x00000020;
 const SDL_INIT_AUDIO              = 0x00000010;
 const SDL_WINDOWPOS_CENTERED      = 0x2FFF0000;
@@ -72,8 +80,8 @@ if (IS_BUN) {
         SDL_CloseAudioDevice:   { args: [FFIType.u32],                                                                      returns: FFIType.void    },
     };
     let _sym;
-    try      { ({ symbols: _sym } = dlopen('libSDL2-2.0.so.0', FFI_DEFS)); }
-    catch(_) { ({ symbols: _sym } = dlopen('libSDL2.so',        FFI_DEFS)); }
+    try      { ({ symbols: _sym } = dlopen(_SDL_LIB,          FFI_DEFS)); }
+    catch(_) { ({ symbols: _sym } = dlopen(_SDL_LIB_ALT ?? _SDL_LIB, FFI_DEFS)); }
     ({  SDL_Init, SDL_Quit,
         SDL_CreateWindow, SDL_DestroyWindow, SDL_HideWindow, SDL_MaximizeWindow,
         SDL_SetWindowTitle, SDL_SetWindowSize, SDL_GetWindowID,
@@ -95,8 +103,8 @@ if (IS_BUN) {
     // koffi — works in Node.js
     const koffi = _req('koffi');
     let lib;
-    try      { lib = koffi.load('libSDL2-2.0.so.0'); }
-    catch(_) { lib = koffi.load('libSDL2.so'); }
+    try      { lib = koffi.load(_SDL_LIB); }
+    catch(_) { lib = koffi.load(_SDL_LIB_ALT ?? _SDL_LIB); }
     SDL_Init            = lib.func('int SDL_Init(uint32 flags)');
     SDL_Quit            = lib.func('void SDL_Quit()');
     SDL_CreateWindow    = lib.func('void *SDL_CreateWindow(const char *title, int x, int y, int w, int h, uint32 flags)');
