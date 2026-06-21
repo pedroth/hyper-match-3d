@@ -18,6 +18,25 @@ npx esbuild index.js \
   --banner:js="(function(require){" \
   --footer:js="})(require('module').createRequire(process.execPath));"
 
+echo "==> Bundling worker..."
+npx esbuild src/RayTraceWorker.js \
+  --bundle \
+  --platform=node \
+  --format=cjs \
+  --outfile=dist/worker.cjs
+
+echo "==> Patching worker path in main bundle..."
+node -e "
+  const fs = require('fs'), f = 'dist/bundle.cjs';
+  fs.writeFileSync(f, fs.readFileSync(f,'utf8').replace(
+    \"'./src/RayTraceWorker.js'\",
+    \"require('path').join(require('path').dirname(process.execPath),'worker.cjs')\"
+  ).replace(
+    '\"./src/RayTraceWorker.js\"',
+    \"require('path').join(require('path').dirname(process.execPath),'worker.cjs')\"
+  ));
+"
+
 echo "==> Generating SEA blob..."
 node --experimental-sea-config sea-config.json
 
@@ -35,6 +54,9 @@ mkdir -p "$OUT_DIR/$SDL_PKG"
 cp -r "$SDL_PKG/dist"        "$OUT_DIR/$SDL_PKG/"
 cp -r "$SDL_PKG/src"         "$OUT_DIR/$SDL_PKG/"
 cp    "$SDL_PKG/package.json" "$OUT_DIR/$SDL_PKG/"
+
+echo "==> Copying worker bundle..."
+cp dist/worker.cjs "$OUT_DIR/"
 
 echo "==> Copying assets..."
 cp -r assets "$OUT_DIR/"
