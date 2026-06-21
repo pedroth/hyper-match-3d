@@ -19,6 +19,14 @@ By selecting two adjacent spheres, you can swap them. If three or more spheres o
 
 That's it! Have fun!
 
+# Building an executable
+
+- `npm i` to install dependencies
+- `npm run build` to create executables for Linux and Windows. The executables will be created in `dist-linux` and `dist-windows` folders.
+- `./dist-linux/hypermatch3d` to run the Linux executable
+- Click on `dist-windows/hypermatch3d.exe` to run the Windows executable on Windows.
+- `wine ./dist-windows/hypermatch3d.exe` to run the Windows executable on linux. 
+
 # Running using docker
 
 Just need to run:
@@ -45,10 +53,10 @@ If you don't have `npm` installed, run docker commands directly:
 - [X] Select shader
 - [ ] Create web version
 - [ ] Better network generation
-- [ ] Create executable (not possible)
+- [X] Create executable
 - [X] Create executable with [dockerc](https://github.com/NilsIrl/dockerc)
 - [ ] Improve performance
-- [ ] Select difficulty level (?)
+- [ ] Select difficulty level ?
 
 
 # Status of project
@@ -56,6 +64,12 @@ If you don't have `npm` installed, run docker commands directly:
 Dedicated approximately 30 days to this. The demo is finished, you can run it using node. As of 2024, is not possible to create a single executable application(SEA) with node and [es6 imports](https://github.com/nodejs/single-executable/discussions/84).Also the software render is pretty slow, even when using multi-threading achieving a range of 3 to 8 fps. Hence I mostly given up on this now.
 
 > For some reason, as of 2024, `bun` is not working properly.
+
+## Update 2026
+
+Using AI claude I was able to create executables for Linux and Windows. 
+
+Use `npm run build` to create executables for Linux and Windows.
 
 ## Creating an executable from docker
 
