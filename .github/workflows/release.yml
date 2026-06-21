@@ -15,14 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: oven-sh/setup-bun@v2
-
       - uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
 
       - name: Install dependencies
-        run: bun install
+        run: npm install
 
       - name: Build Linux
         run: npm run build:linux
