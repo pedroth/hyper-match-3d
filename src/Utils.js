@@ -86,7 +86,11 @@ export function loop(lambda) {
         const newT = new Date().getTime();
         const dt = (newT - oldT) * 1e-3;
 
-        await lambda(dt, time);
+        try {
+            await lambda(dt, time);
+        } catch (e) {
+            console.error('[loop error]', e);
+        }
 
         if (isFinished) return;
         setTimeout(() => play({

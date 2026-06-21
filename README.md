@@ -37,7 +37,7 @@ If you don't have `npm` installed, run docker commands directly:
 
 # Dependencies
 
-- [SLD bindings for node.js](https://github.com/kmamal/node-sdl)
+- [koffi](https://github.com/Koromix/koffi) - Node.js FFI library
 
 # TODOs
 
@@ -45,10 +45,11 @@ If you don't have `npm` installed, run docker commands directly:
 - [X] Select shader
 - [ ] Create web version
 - [ ] Better network generation
-- [ ] Create executable (not possible)
+- [ ] Create node executable
+- [X] Create bun executable (slow because of bun problem)
 - [X] Create executable with [dockerc](https://github.com/NilsIrl/dockerc)
 - [ ] Improve performance
-- [ ] Select difficulty level (?)
+- [ ] Select difficulty level ?
 
 
 # Status of project
