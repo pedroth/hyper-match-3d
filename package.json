@@ -1,5 +1,6 @@
 {
   "name": "manifold-match-3",
+  "version": "0.1.0",
   "module": "index.js",
   "type": "module",
   "dependencies": {
@@ -16,7 +17,8 @@
     "build:linux": "bash scripts/build-linux.sh",
     "build:windows": "bash scripts/build-windows.sh",
     "build": "npm run build:linux && npm run build:windows",
-    "clean": "rm -rf dist dist-linux dist-windows sea-prep.blob node_modules"
+    "clean": "rm -rf dist dist-linux dist-windows sea-prep.blob node_modules",
+    "release": "npm version patch && git push origin --tags"
   },
   "devDependencies": {
     "esbuild": "*",
