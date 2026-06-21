@@ -10,7 +10,8 @@
   ],
   "scripts": {
     "start": "node index.js",
-    "build": "bun build --compile --external koffi index.js --outfile hypermatch3d",
+    "build:node": "mkdir -p dist && bun build --format=cjs --target=node --external koffi index.js --outfile dist/node-bundle.cjs && node --experimental-sea-config sea-config.json && cp $(which node) hypermatch3d-node && npx postject hypermatch3d-node NODE_SEA_BLOB dist/sea-prep.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 && chmod +x hypermatch3d-node && echo 'Node executable: ./hypermatch3d-node'",
+    "build:bun": "bun build --compile --external koffi index.js --outfile hypermatch3d",
     "start_docker": "node index.docker.js",
     "build_docker": "docker build -t hypermatch3d .",
     "docker_run": "xhost + && sudo docker run --rm -v /tmp/.X11-unix:/tmp/.X11-unix:ro -e DISPLAY=$DISPLAY hypermatch3d"

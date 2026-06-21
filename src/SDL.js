@@ -6,6 +6,9 @@
  *  only those.. not more,
  */
 
+import { createRequire } from 'module';
+const _req = createRequire(import.meta.url);
+
 const IS_BUN = typeof globalThis.Bun !== 'undefined';
 
 const SDL_INIT_VIDEO              = 0x00000020;
@@ -41,7 +44,7 @@ let SDL_Init, SDL_Quit,
 
 if (IS_BUN) {
     // bun:ffi — works in `bun run` and compiled binaries (avoids NAPI GC crash)
-    const { dlopen, FFIType } = await import('bun:ffi');
+    const { dlopen, FFIType } = _req('bun:ffi');
     const FFI_DEFS = {
         SDL_Init:               { args: [FFIType.u32],                                                                      returns: FFIType.i32     },
         SDL_Quit:               { args: [],                                                                                 returns: FFIType.void    },
@@ -90,7 +93,7 @@ if (IS_BUN) {
     SDL_Init(SDL_INIT_VIDEO); // SDL_INIT_AUDIO deadlocks in bun:ffi
 } else {
     // koffi — works in Node.js
-    const { default: koffi } = await import('koffi');
+    const koffi = _req('koffi');
     let lib;
     try      { lib = koffi.load('libSDL2-2.0.so.0'); }
     catch(_) { lib = koffi.load('libSDL2.so'); }

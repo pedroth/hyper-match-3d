@@ -45,8 +45,8 @@ If you don't have `npm` installed, run docker commands directly:
 - [X] Select shader
 - [ ] Create web version
 - [ ] Better network generation
-- [ ] Create node executable
-- [X] Create bun executable (slow because of bun problem)
+- [X] Create node executable
+- [X] Create bun executable (slow because of bun problem and without sound)
 - [X] Create executable with [dockerc](https://github.com/NilsIrl/dockerc)
 - [ ] Improve performance
 - [ ] Select difficulty level ?
