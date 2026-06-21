@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build Linux
+        run: npm run build:linux
+
+      - name: Build Windows
+        run: npm run build:windows
+
+      - name: Package artifacts
+        run: |
+          tar -czf hypermatch3d-linux.tar.gz  -C dist-linux  .
+          zip -r   hypermatch3d-windows.zip      dist-windows/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            hypermatch3d-linux.tar.gz
+            hypermatch3d-windows.zip

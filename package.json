@@ -1,5 +1,6 @@
 {
   "name": "manifold-match-3",
+  "version": "0.1.0",
   "module": "index.js",
   "type": "module",
   "dependencies": {
@@ -12,7 +13,15 @@
     "start": "node index.js",
     "start_docker": "node index.docker.js",
     "build_docker": "docker build -t hypermatch3d .",
-    "docker_run": "xhost + && sudo docker run --rm -v /tmp/.X11-unix:/tmp/.X11-unix:ro -e DISPLAY=$DISPLAY hypermatch3d"
+    "docker_run": "xhost + && sudo docker run --rm -v /tmp/.X11-unix:/tmp/.X11-unix:ro -e DISPLAY=$DISPLAY hypermatch3d",
+    "build:linux": "bash scripts/build-linux.sh",
+    "build:windows": "bash scripts/build-windows.sh",
+    "build": "npm run build:linux && npm run build:windows",
+    "clean": "rm -rf dist dist-linux dist-windows sea-prep.blob node_modules",
+    "release": "npm version patch && git push origin --tags"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "esbuild": "*",
+    "postject": "*"
+  }
 }

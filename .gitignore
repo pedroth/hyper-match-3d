@@ -128,3 +128,12 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+
+# dist folder
+dist/
+dist-linux/
+dist-windows/
+
+# Node SEA build artifact
+sea-prep.blob
