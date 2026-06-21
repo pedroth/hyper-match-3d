@@ -1,6 +1,6 @@
-import sdl from "@kmamal/sdl"
 import Box from "./Box.js";
 import { Vec2 } from "./Vector.js";
+import sdl from "./SDL.js";
 import { MAX_8BIT } from "./Constants.js";
 import { CHANNELS, clamp,  } from "./Utils.js";
 import Image from "./Image.js";
@@ -13,7 +13,7 @@ export default class Window extends Image {
     constructor(width, height, title = "") {
         super(width, height)
         this._title = title;
-        this._window = sdl.video.createWindow({ title, resizable: true });
+        this._window = sdl.video.createWindow({ title, width, height, resizable: true });
         this._eventHandlers = {};
     }
 

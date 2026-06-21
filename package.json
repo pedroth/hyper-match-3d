@@ -3,13 +3,14 @@
   "module": "index.js",
   "type": "module",
   "dependencies": {
-    "@kmamal/sdl": "^0.10.7"
+    "koffi": "^3.0.2"
   },
   "trustedDependencies": [
-    "@kmamal/sdl"
+    "koffi"
   ],
   "scripts": {
     "start": "node index.js",
+    "build": "bun build --compile index.js --outfile hypermatch3d",
     "start_docker": "node index.docker.js",
     "build_docker": "docker build -t hypermatch3d .",
     "docker_run": "xhost + && sudo docker run --rm -v /tmp/.X11-unix:/tmp/.X11-unix:ro -e DISPLAY=$DISPLAY hypermatch3d"
