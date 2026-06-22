@@ -118,14 +118,12 @@ export default class Box {
 
     collidesWith(arg) {
         const vectorCollision = () => !this.sub(new Box(arg, arg)).isEmpty;
-        const type2action = {
-            [Box.name]: () => !this.sub(arg).isEmpty,
-            "Vector": vectorCollision,
-            "Vector3": vectorCollision,
-            "Vector2": vectorCollision,
+        if (arg instanceof Box) {
+            return !this.sub(arg).isEmpty;
         }
-        if (arg.constructor.name in type2action) {
-            return type2action[arg.constructor.name]();
+        // Duck-type check for Vec, Vector2, Vector3 — robust against esbuild name mangling
+        if (arg != null && typeof arg.dim === 'number' && typeof arg.toArray === 'function') {
+            return vectorCollision();
         }
         return false;
     }
