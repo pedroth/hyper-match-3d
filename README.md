@@ -6,6 +6,14 @@ HyperMatch 3D is a manifold match-3 game where you swap sphere positions so that
 
 # Quick start
 
+## Get executable from github releases
+
+- Download the latest release from [github releases](https://github.com/pedroth/hyper-match-3d/releases)
+- Unzip the file and run the executable for your platform.
+    - Linux: `./hypermatch3d`
+    - Windows: click `hypermatch3d.exe`
+
+## Run from source
 - Git clone the repo: `git clone git@github.com:pedroth/hyper-match-3d.git`
 - Use `npm` or `bun` to install it: `npm i` or `bun install`.
 - Run it with `node`: `node index.js`
@@ -18,24 +26,6 @@ HyperMatch 3D is a manifold match-3 game where you swap sphere positions so that
 By selecting two adjacent spheres, you can swap them. If three or more spheres of the same color are connected, they will be removed from the mesh.
 
 That's it! Have fun!
-
-# Building an executable
-
-- `npm i` to install dependencies
-- `npm run build` to create executables for Linux and Windows. The executables will be created in `dist-linux` and `dist-windows` folders.
-- `./dist-linux/hypermatch3d` to run the Linux executable
-- Click on `dist-windows/hypermatch3d.exe` to run the Windows executable on Windows.
-- `wine ./dist-windows/hypermatch3d.exe` to run the Windows executable on linux. 
-
-# Running using docker
-
-Just need to run:
-- `npm run build_docker`
-- `npm run docker_run`
-
-If you don't have `npm` installed, run docker commands directly:
-- `docker build -t hypermatch3d .`
-- `xhost + && sudo docker run --rm -v /tmp/.X11-unix:/tmp/.X11-unix:ro -e DISPLAY=$DISPLAY hypermatch3d`
 
 # Credits
 
@@ -70,6 +60,26 @@ Dedicated approximately 30 days to this. The demo is finished, you can run it us
 Using AI claude I was able to create executables for Linux and Windows. 
 
 Use `npm run build` to create executables for Linux and Windows.
+
+# Miscellaneous
+
+## Building an executable
+
+- `npm i` to install dependencies
+- `npm run build` to create executables for Linux and Windows. The executables will be created in `dist-linux` and `dist-windows` folders.
+- `./dist-linux/hypermatch3d` to run the Linux executable
+- Click on `dist-windows/hypermatch3d.exe` to run the Windows executable on Windows.
+- `wine ./dist-windows/hypermatch3d.exe` to run the Windows executable on linux. 
+
+## Running using docker
+
+Just need to run:
+- `npm run build_docker`
+- `npm run docker_run`
+
+If you don't have `npm` installed, run docker commands directly:
+- `docker build -t hypermatch3d .`
+- `xhost + && sudo docker run --rm -v /tmp/.X11-unix:/tmp/.X11-unix:ro -e DISPLAY=$DISPLAY hypermatch3d`
 
 ## Creating an executable from docker
 
